@@ -1,0 +1,37 @@
+{
+  "scope": "Read-only viewer over actual automatic paired searches/replays; not native execution in the browser",
+  "viewer_contract_controls": 47,
+  "actual_controller_controls": 54,
+  "recorded_cases": "CPython difflib and pprint automatic paired searches",
+  "browser_widths": [
+    1280,
+    360
+  ],
+  "record_download_bytes": 2227676,
+  "actual_roundtrip": true,
+  "malformed_import_preserves_previous": true,
+  "standalone_file_browser": "Unavailable: browser URL policy refuses file://, no retry or workaround",
+  "portable_zero_fetch": "Passed minimal-DOM actual inline-controller check",
+  "artifacts": [
+    {
+      "file": "index.html",
+      "sha256": "93c5c027238cb73c41c24f7f18f90c7c14abd73fcc46e93cc05be51ff1632283",
+      "bytes": 6534
+    },
+    {
+      "file": "demo.json",
+      "sha256": "6bd3c7c4d4c25596d3008bac852325efa0ea22fd6942e5ebc6073554529f052e",
+      "bytes": 1409226
+    },
+    {
+      "file": "style.css",
+      "sha256": "4495503bad5e1238ad864521963ec84ca94e7b2df5c17290d82425333a393e7b",
+      "bytes": 9441
+    },
+    {
+      "file": "app.js",
+      "sha256": "ef70dbc4fdecdeb21a0f3d52c13290c32bf2ff742edcc77a4ac450ee20b7c8cb",
+      "bytes": 16996
+    }
+  ]
+}
