@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aetiory"
+version = "0.1.0"
+description = "Choose an output, find an influential Python return, and replay its paired effect."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE", "licenses/*.txt"]
+authors = [{name = "Nazeeh Abdul-Hadi"}]
+dependencies = []
+keywords = ["debugging", "counterfactual", "python", "execution", "mcp", "replay"]
+classifiers = ["Development Status :: 3 - Alpha", "Programming Language :: Python :: 3", "Operating System :: POSIX"]
+
+[project.urls]
+Source = "https://github.com/nazeeh111/Aetiory"
+Studio = "https://nazeeh111.github.io/Aetiory/"
+
+[project.scripts]
+aetiory = "aetiory.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["aetiory*"]
+
+[tool.setuptools.package-data]
+"aetiory.web" = ["index.html", "app.js", "style.css", "demo.json", "API.md", "NOTICES.txt"]

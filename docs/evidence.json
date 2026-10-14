@@ -1,0 +1,81 @@
+{
+  "schema": "aetiory-evidence/1",
+  "engine_sha256": "50a19197df8b3cb605816b0554d6a5858e85079b042c68cd70e85f3bdffd53cd",
+  "interpreter": "CPython3.14.7 macOS",
+  "cases": [
+    {
+      "case": "diff",
+      "source_sha256": {
+        "difflib": "dcf149dea54bce852505d29a195a179402197cef77ac31b467027a2a56265af5"
+      },
+      "observed_events": 1592,
+      "candidate_count": 462,
+      "trial_count": 81,
+      "paired_parent_equal": true,
+      "child_reaped": true,
+      "replay_status": "reproduced",
+      "replay_selected_changed": true,
+      "undo_byte_identical": true,
+      "original_artifact": {
+        "bytes": 77339,
+        "sha256": "09316d2bc433b0f1101e5904d01b5b0e966b1c4275c0c021d4b5f042aa3541c0"
+      },
+      "alternate_artifact": {
+        "bytes": 77309,
+        "sha256": "f97b144f0bb8d083af04de2350ea3c834207032d8cb7b260fa827614c3523ba3"
+      },
+      "collateral": {
+        "changed_anchored_subtrees": 3,
+        "truncated": false
+      }
+    },
+    {
+      "case": "report",
+      "source_sha256": {
+        "pprint": "0b807d4a62c4292ead5b64e1b455f98b0ba225667ff3ee74bd7e0b873620402d"
+      },
+      "observed_events": 251728,
+      "candidate_count": 335,
+      "trial_count": 11,
+      "paired_parent_equal": true,
+      "child_reaped": true,
+      "replay_status": "reproduced",
+      "replay_selected_changed": true,
+      "undo_byte_identical": true,
+      "original_artifact": {
+        "bytes": 488923,
+        "sha256": "7008075f25d31994a4dbf5b45e65a3bc9eb483232ab1cc27ae1529b38b146a2a"
+      },
+      "alternate_artifact": {
+        "bytes": 488923,
+        "sha256": "29906300911e2be3dda4b177d71684ca5d0173a88e47da8dcd9d2402ea2c908b"
+      },
+      "collateral": {
+        "differences": [
+          {
+            "after": 57,
+            "before": 56,
+            "path": "/baseline/outputs/MANIFOLD/faces/98/1"
+          }
+        ],
+        "truncated": false
+      }
+    }
+  ],
+  "verification": {
+    "python_methods": 30,
+    "viewer_contract_controls": 47,
+    "viewer_controller_controls": 54,
+    "fresh_core_review_controls": 15,
+    "fresh_mcp_review_controls": 44,
+    "fresh_export_regression_methods": 7,
+    "fresh_export_tamper_conditions": 22,
+    "installed_wheel_actual_journey": true,
+    "standalone_file_browser": "unavailable: browser URL policy; no workaround"
+  },
+  "limits": [
+    "Recorded two-program examples, not universal correctness or complete causality.",
+    "Representation experiment did not rerun or repair native geometry.",
+    "Browser proof is display-only; local CLI executes trusted Python."
+  ]
+}
