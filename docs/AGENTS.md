@@ -51,3 +51,18 @@ responses produce a small error while complete reports stay on disk. Calls are
 sequential and time-bounded. Mid-call MCP cancellation is not supported; the
 engine's process timeout handles its owned process group. Never advertise it as
 an uploaded-code service or expose it to untrusted clients.
+
+## Diagnose a failing standalone script
+
+The fifth tool, `diagnose_program`, performs capture, bounded automatic return
+search, fresh native replay, unchanged undo and portable export in one call.
+`script` is a workspace file; additional `modules` are optional and can use
+`stdlib:NAME` source declarations. It automatically observes the entry module.
+`inputs` and `arguments` follow `observe_program`, including `@input:0`.
+
+Pass both `stdout_pointer` and `stdout_equals` to require actual output, where
+`stdout_equals` is a JSON string such as `"{\"count\":9}"`. No arbitrary predicate
+code is evaluated. The response separates `diagnosed`, `unresolved` and
+`refused`, with session handles and local receipt/viewer paths. Inspect the
+`diagnosis` handle or replay its `intervention` handle. A diagnosed return is
+not a source repair; engine capture success is distinct from target exit0.

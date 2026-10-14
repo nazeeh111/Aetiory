@@ -63,3 +63,25 @@ not rolled back. Mid-call MCP cancellation is unsupported; local process timeout
 and native CLI interruption handle owned workers.
 
 Direct standalone file opening could not be tested in the controlled browser: its URL policy refuses file://. No alternate browser or URL workaround was used. The inline consumer passed a zero-fetch minimal-DOM startup check; regular HTTP studio interaction and record round-trip were verified separately.
+
+
+# Evidence for0.2.0
+
+The new recorded failure cases use engineSHA256 `b6e4b3f68ca77df64310c9daf32956aa382893de169c0a5f35eb7930a8bea998`.
+[Machine-readable case identities](failure-evidence.json) retain actual sources,
+entry/interpreter identities, return events, trial counts and control outcomes.
+
+- Actual installed CPython3.13 argparse: exit2→exit0 with exact float param
+  -3e12,23 eligible candidates and17 native paired trials. Known upstream
+  negative-scientific-notation issue; upgrade/syntax workaround is simpler.
+- Owned standalone CSV workload, Python3.14: floor capacity0 raises ValueError;
+  return1 yields9 batches, all9 records and total3370. One eligible candidate,
+  two actual native trials. This is an owned example with a retained defect.
+
+Both required unchanged/observed full outcome byte parity, original parent
+parity, actual stdout predicates, independently recomputed fresh replay, exact
+fresh no-intervention undo and native child reaping. Engine refusal, resource
+quotas and invalid UTF-8 remain refusals. This proves these runs, not arbitrary
+program diagnosis or a source-level fix. The two0.1 artifact demonstrations
+remain historical records with their original engine identities; they were not
+re-recorded or relabeled as0.2 native evidence.

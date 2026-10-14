@@ -1,7 +1,8 @@
 // Actual browser-controller handlers with a minimal DOM. No layout or browser claim.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-const payload=JSON.parse(fs.readFileSync(new URL('./demo.json',import.meta.url),'utf8'));
+const completePayload=JSON.parse(fs.readFileSync(new URL('./demo.json',import.meta.url),'utf8'));
+const payload={...completePayload,experiments:completePayload.experiments.filter(e=>e.selector.kind!=='successful-exit')};
 const html=fs.readFileSync(new URL('./index.html',import.meta.url),'utf8');
 const created=[],downloads=[];
 class Node {
@@ -46,4 +47,5 @@ $('cases').children[0].click();await settle();$('changes').children[payload.expe
 function coreShape(v){if(!v||typeof v!=='object')return v;if(Array.isArray(v))return v.map(coreShape);const out={};for(const [k,x]of Object.entries(v))out[k==='children'?'content':k]=coreShape(x);return out;}
 const core=structuredClone(payload);for(const c of core.experiments[0].changes){c.before=coreShape(c.before);c.after=coreShape(c.after);}core.experiments[0].selector.sibling=0;await importRecord(core);assert.equal($('selector').textContent,'#from0_72 (element)');assert($('before-value').children.some(x=>x.className.includes('diff_chg')));assert($('after-value').children.some(x=>x.className.includes('diff_sub')));assert($('after-value').children[0].textContent.includes('sig=failure_signature'));assert(!$('before-value').textContent.includes('"content"'));checks+=5;
 const snapshotAttack=structuredClone(core);snapshotAttack.experiments[0].changes.find(c=>c.selected).before={tag:'td',attrs:[['onclick','globalThis.compromised=true']],content:[{tag:'span',attrs:[['class','diff_sub'],['onerror','alert(1)'],['src','https://invalid.example/spy']],content:[attack]}]};await importRecord(snapshotAttack);assert.equal($('before-value').children[0].textContent,attack);assert.equal($('before-value').children[0].attributes.onerror,undefined);assert.equal($('before-value').children[0].attributes.src,undefined);assert.equal(globalThis.compromised,undefined);checks+=4;
+const failurePayload={...completePayload,experiments:completePayload.experiments.filter(e=>e.selector.kind==='successful-exit')};await importRecord(failurePayload);assert.equal($('outcome-panel').hidden,false);assert.match($('outcome-before').textContent,/code 2/);assert.match($('outcome-after').textContent,/code 0/);assert.match($('stdout-after').textContent,/-3000000000000/);assert.match($('stderr-before').textContent,/expected one argument/);assert.equal($('download-after').disabled,false);checks+=6;
 console.log(`${checks} actual controller checks passed: status, incomplete receipts, hostile text, exact download gating, malformed-import survival and stale digest exclusion. Minimal DOM only; browser/layout verification remains separate.`);

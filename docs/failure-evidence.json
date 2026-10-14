@@ -1,0 +1,202 @@
+{
+  "version": "0.2.0",
+  "engine_sha256": "b6e4b3f68ca77df64310c9daf32956aa382893de169c0a5f35eb7930a8bea998",
+  "status": "native_cases_verified",
+  "cases": [
+    {
+      "case": "argparse-release",
+      "manifest": {
+        "arguments": [
+          "-p",
+          "-3e12"
+        ],
+        "artifact": "outcome.json",
+        "engine": {
+          "bytes": 70197,
+          "path": "/Users/nazeeh/Documents/Codex/2026-10-11/build-exceptional-software-earn-real-adoption-2/work/aetiory/aetiory/engine.py",
+          "sha256": "b6e4b3f68ca77df64310c9daf32956aa382893de169c0a5f35eb7930a8bea998"
+        },
+        "execution": {
+          "instrument_entry": true,
+          "schema": "target-outcome/1",
+          "stream_limit": 131072
+        },
+        "inputs": [],
+        "interpreter": {
+          "cache_tag": "cpython-313",
+          "executable": {
+            "bytes": 119328,
+            "path": "/Library/Frameworks/Python.framework/Versions/3.13/bin/python3.13",
+            "sha256": "3a1f077a333905eaac57197c9f2060ed95e05208daf83da4827d92e0474574d8"
+          },
+          "implementation": "cpython",
+          "version": "3.13.2 (v3.13.2:4f8bb3947cf, Feb  4 2025, 11:51:10) [Clang 15.0.0 (clang-1500.3.9.4)]"
+        },
+        "max_events": 300000,
+        "modules": {
+          "__main__": {
+            "bytes": 420,
+            "path": "/Users/nazeeh/Documents/Codex/2026-10-11/build-exceptional-software-earn-real-adoption-2/work/aetiory/examples/scientific_cli.py",
+            "sha256": "9ee36f6319cfc6569c7942784bb9da8fc0e9108fb9188dc54328a04e5a4c772e"
+          },
+          "argparse": {
+            "bytes": 101648,
+            "path": "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/argparse.py",
+            "sha256": "a21e8ced677ee3710d7361c39e903819c702668a37f022c0feafb7275f53dead"
+          }
+        },
+        "schema": "causal-engine/1",
+        "script": {
+          "bytes": 420,
+          "path": "/Users/nazeeh/Documents/Codex/2026-10-11/build-exceptional-software-earn-real-adoption-2/work/aetiory/examples/scientific_cli.py",
+          "sha256": "9ee36f6319cfc6569c7942784bb9da8fc0e9108fb9188dc54328a04e5a4c772e"
+        }
+      },
+      "event": {
+        "ancestry_hash": "7e53edb981289daf19ebc72853f089f1de7abc05ee529af2b1fcdfe1d0f186ac",
+        "function": "ArgumentParser._parse_optional",
+        "id": 32,
+        "module": "argparse",
+        "prefix_before": "4e9a023309e59b84ee587ccc30140a436fd9b1799f57fbbbc7fa98af6c00e9e3",
+        "site": "2359:8",
+        "value_hash": "681a672ebb8cc435f7a1fd4d041a72a0b6e1c16ea0923378b95ee10f78c3e73a"
+      },
+      "replacement": [
+        "none"
+      ],
+      "selector": {
+        "kind": "outcome",
+        "stdout_expected": [
+          "float",
+          "-0x1.5d3ef79800000p+41"
+        ],
+        "stdout_pointer": "/param"
+      },
+      "baseline_kind": "exit",
+      "baseline_exit_code": 2,
+      "alternate_exit_code": 0,
+      "actual_stdout": "{\"param\": -3000000000000.0}\n",
+      "trials": 17,
+      "candidates": 23,
+      "plain_observed_equal": true,
+      "parent_original_equal": true,
+      "fresh_replay": "reproduced",
+      "fresh_undo_equal": true,
+      "children_reaped": true
+    },
+    {
+      "case": "batches-release",
+      "manifest": {
+        "arguments": [
+          "/Users/nazeeh/Documents/Codex/2026-10-11/build-exceptional-software-earn-real-adoption-2/work/aetiory/examples/inputs/records.csv",
+          "128"
+        ],
+        "artifact": "outcome.json",
+        "engine": {
+          "bytes": 70197,
+          "path": "/Users/nazeeh/Documents/Codex/2026-10-11/build-exceptional-software-earn-real-adoption-2/work/aetiory/aetiory/engine.py",
+          "sha256": "b6e4b3f68ca77df64310c9daf32956aa382893de169c0a5f35eb7930a8bea998"
+        },
+        "execution": {
+          "instrument_entry": true,
+          "schema": "target-outcome/1",
+          "stream_limit": 131072
+        },
+        "inputs": [
+          {
+            "bytes": 68,
+            "path": "/Users/nazeeh/Documents/Codex/2026-10-11/build-exceptional-software-earn-real-adoption-2/work/aetiory/examples/inputs/records.csv",
+            "sha256": "e26378574b44c4b9febdbedd6c59e02441f9044049fd17e96b6ef0323e3e00ad"
+          }
+        ],
+        "interpreter": {
+          "cache_tag": "cpython-314",
+          "executable": {
+            "bytes": 135696,
+            "path": "/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+            "sha256": "81c87d90892fe12428ee3b78a675c57c62d6c479236fb359ad5b2d7f07c38b2c"
+          },
+          "implementation": "cpython",
+          "version": "3.14.7 (v3.14.7:823f0323ee6, Aug  5 2026, 07:07:01) [Clang 21.0.0 (clang-2100.1.1.101)]"
+        },
+        "max_events": 300000,
+        "modules": {
+          "__main__": {
+            "bytes": 829,
+            "path": "/Users/nazeeh/Documents/Codex/2026-10-11/build-exceptional-software-earn-real-adoption-2/work/aetiory/examples/partition_records.py",
+            "sha256": "2b02ffb27229850f712316dd943cbf6a5bddf051b03637099c251e510d1d01f3"
+          }
+        },
+        "schema": "causal-engine/1",
+        "script": {
+          "bytes": 829,
+          "path": "/Users/nazeeh/Documents/Codex/2026-10-11/build-exceptional-software-earn-real-adoption-2/work/aetiory/examples/partition_records.py",
+          "sha256": "2b02ffb27229850f712316dd943cbf6a5bddf051b03637099c251e510d1d01f3"
+        }
+      },
+      "event": {
+        "ancestry_hash": "e58f0737f96066aa294fb5abfdcc38c5d1ce173760ced3ce9fca0967ae1829e9",
+        "function": "planned_capacity",
+        "id": 1,
+        "module": "__main__",
+        "prefix_before": "cd7e271741581041dc67a7c9ec4c83a0c1090bd3a0bd2555b445a17413514c74",
+        "site": "10:4",
+        "value_hash": "d8117918f245aedda9bf1236d1eb30e8958c763caca42418e6e969d561124f07"
+      },
+      "replacement": [
+        "int",
+        "1"
+      ],
+      "selector": {
+        "kind": "outcome",
+        "stdout_expected": [
+          "dict",
+          [
+            [
+              [
+                "str",
+                "records"
+              ],
+              [
+                "int",
+                "9"
+              ]
+            ],
+            [
+              [
+                "str",
+                "batches"
+              ],
+              [
+                "int",
+                "9"
+              ]
+            ],
+            [
+              [
+                "str",
+                "total"
+              ],
+              [
+                "int",
+                "3370"
+              ]
+            ]
+          ]
+        ],
+        "stdout_pointer": ""
+      },
+      "baseline_kind": "exception",
+      "baseline_exit_code": 1,
+      "alternate_exit_code": 0,
+      "actual_stdout": "{\"batches\": 9, \"records\": 9, \"total\": 3370}\n",
+      "trials": 2,
+      "candidates": 1,
+      "plain_observed_equal": true,
+      "parent_original_equal": true,
+      "fresh_replay": "reproduced",
+      "fresh_undo_equal": true,
+      "children_reaped": true
+    }
+  ]
+}

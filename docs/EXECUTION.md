@@ -1,6 +1,6 @@
 # Paired engine integration contract
 
-`causal_engine.py` is a standard-library-only module. Import it and call `observe(args)`, `search(args)` or `replay(args)` with an `argparse.Namespace`, or invoke its CLI. `main()` prints a compact JSON result; handlers return the full receipt. `Refusal` is a controlled rejection. Exit0 means observed/influence_confirmed/reproduced, exit3 means refused/unresolved; argparse usage errors use exit2.
+`aetiory.engine` is a standard-library-only module. Import it and call `observe(args)`, `search(args)` or `replay(args)` with an `argparse.Namespace`, or invoke its CLI. `main()` prints a compact JSON result; handlers return the full receipt. `Refusal` is a controlled rejection. Exit0 means observed/influence_confirmed/reproduced, exit3 means refused/unresolved; argparse usage errors use exit2.
 
 Current backend: real paired `os.fork`, not heap serialization. Supported proof workloads are explicit trusted synchronous Python entry scripts using selected source modules, with one Python thread and no nonstandard open streams at the split. Sources/inputs are read before computation and a relative artifact is written after it completes. There is no model/provider dependency, separately billed service, uploaded-code sandbox, implicit remote authority or external network endpoint.
 
@@ -68,3 +68,38 @@ All work runs in one new owned process group. Child retains that group, uses its
 ## Verification
 
 `python3 -m unittest discover -s tests -v` checks source/input/entry/interpreter drift, event/value/ancestry/prefix/plan tampering, opaque targets, user streams, multiple threads, paired timeout and actual SIGINT host cancellation with retained native child-reap receipts, re-sealed invalid/missing/unchanged selectors, forged/empty trace evidence, imported manifest bounds, no-clobber, selector ambiguity, positional-shift independence and portable-value bounds. Actual generic unmodified-program experiments and receipts are separate from these controlled protocol tests.
+
+## Explicit target outcome execution
+
+`observe --capture-outcome` reserves `outcome.json` for the engine and adds a
+pinned `execution` recipe with schema `target-outcome/1`. The standalone entry
+is automatically selected as `__main__`; its source executes in a temporary real
+module, with its actual filename/argv. Package entrypoints, zip scripts, Windows
+and arbitrary startup-environment equivalence are not supported. Instrumentation
+adds a collision-checked global hook, and execution retains the worker's import
+environment; unchanged source does not mean an identical ordinary interpreter.
+
+Captured outcome fields are `schema`, `kind`, `exit_code`, `exception`, `stdout`
+and `stderr`. Ordinary exceptions use code1 and bounded actual source frames.
+SystemExitNone/int/bool/string has normalized process-exit semantics; integer
+values outside the platform signed native-long range refuse. Exit strings are
+written once to stderr. KeyboardInterrupt, engine refusals, quotas, signals and
+incomplete workers are not searchable target failures. Each stream is limited
+to128KiB of strict UTF-8; overflow refuses without truncation. The paired child
+includes flushed output produced before the split.
+
+A successful-exit selector has kind `outcome`, `stdout_pointer` (null or a JSON
+pointer) and `stdout_expected` (null or the engine's canonical packed JSON value).
+It requires normal exit0, plus the optional exact typed stdout value. JSON object
+key order is irrelevant; integers and floats remain different types. As in
+Python value equality, positive and negative floating zero satisfy the same
+predicate. Source return hashing still binds the original complete typed value.
+Outcome-only searches may replace a portable return withNone across types; legacy
+artifact searches keep their same-type policy. No function-specific candidates
+or target-file fingerprints authorize a result.
+
+The portable consumer validates canonical outcome shapes and independently
+checks exit/stdout consistency, preserving number token types with source-aware
+JSON parsing. Older browser engines without that capability leave numeric
+stdout goals unverified and disable accepted-alternate downloads. This is a
+consistency check on unauthenticated records, not fresh execution or attestation.

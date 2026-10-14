@@ -146,38 +146,60 @@ def preview(value, depth=0):
     return {"type": t.__module__ + "." + t.__qualname__, "opaque": True}
 
 
-def identity(path):
+def identity(path, limit=8 * 1024 * 1024):
+    if type(limit) is not int or not 1 <= limit <= 128 * 1024 * 1024:
+        raise Refusal("Invalid file identity byte bound")
     original = Path(path)
     if original.is_symlink():
         raise Refusal("Source/input symlinks are not supported")
     p = original.resolve(strict=True)
     if not p.is_file():
         raise Refusal("Expected an ordinary source/input file")
-    if p.stat().st_size > 8 * 1024 * 1024:
-        raise Refusal("Source/input exceeds 8 MiB")
+    before = p.stat()
+    if before.st_size > limit:
+        raise Refusal("Source/input exceeds 8 MiB" if limit == 8 * 1024 * 1024 else "File exceeds explicit identity byte bound")
+    def stamp(metadata):
+        return (metadata.st_dev, metadata.st_ino, metadata.st_size, metadata.st_mtime_ns, metadata.st_ctime_ns)
+    digest, count = hashlib.sha256(), 0
     with p.open("rb") as f:
-        b = f.read(8 * 1024 * 1024 + 1)
-    if len(b) > 8 * 1024 * 1024:
-        raise Refusal("Source/input exceeds 8 MiB")
-    return {"path": str(p), "bytes": len(b), "sha256": sha(b)}
+        if stamp(os.fstat(f.fileno())) != stamp(before):
+            raise Refusal("File identity changed before hashing")
+        while True:
+            block = f.read(min(1024 * 1024, limit - count + 1))
+            if not block:
+                break
+            count += len(block)
+            if count > limit:
+                raise Refusal("File grew beyond identity byte bound")
+            digest.update(block)
+        if stamp(os.fstat(f.fileno())) != stamp(before) or stamp(p.stat()) != stamp(before) or count != before.st_size:
+            raise Refusal("File identity changed during hashing")
+    return {"path": str(p), "bytes": count, "sha256": digest.hexdigest()}
 
 
-def validate_identity(item):
-    if type(item) is not dict or set(item) != {"path", "bytes", "sha256"} or type(item["path"]) is not str or not Path(item["path"]).is_absolute() or len(item["path"]) > 4096 or type(item["bytes"]) is not int or not 0 <= item["bytes"] <= 8 * 1024 * 1024 or type(item["sha256"]) is not str or not re.fullmatch(r"[0-9a-f]{64}", item["sha256"]):
+def validate_identity(item, limit=8 * 1024 * 1024):
+    if type(limit) is not int or not 1 <= limit <= 128 * 1024 * 1024 or type(item) is not dict or set(item) != {"path", "bytes", "sha256"} or type(item["path"]) is not str or not Path(item["path"]).is_absolute() or len(item["path"]) > 4096 or type(item["bytes"]) is not int or not 0 <= item["bytes"] <= limit or type(item["sha256"]) is not str or not re.fullmatch(r"[0-9a-f]{64}", item["sha256"]):
         raise Refusal("Invalid pinned file identity")
 
 
 def validate_manifest(m):
     fields = {"schema", "interpreter", "engine", "script", "modules", "inputs", "arguments", "artifact", "max_events"}
-    if type(m) is not dict or set(m) != fields or m["schema"] != SCHEMA:
+    if type(m) is not dict or set(m) not in (fields, fields | {"execution"}) or m["schema"] != SCHEMA:
         raise Refusal("Invalid manifest schema")
+    execution = m.get("execution")
+    if execution is not None and (type(execution) is not dict or set(execution) != {"schema", "instrument_entry", "stream_limit"} or execution["schema"] != "target-outcome/1" or execution["instrument_entry"] is not True or type(execution["stream_limit"]) is not int or execution["stream_limit"] != 131072 or m["artifact"] != "outcome.json"):
+        raise Refusal("Invalid target outcome execution recipe")
+    if execution is None and "execution" in m:
+        raise Refusal("Invalid target outcome execution recipe")
     modules = m["modules"]
     if type(modules) is not dict or not 1 <= len(modules) <= 16:
         raise Refusal("Select between one and sixteen source modules")
     for name, item in modules.items():
-        if type(name) is not str or len(name) > 256 or not re.fullmatch(r"[A-Za-z_]\w*(\.[A-Za-z_]\w*)*", name) or name in ("__main__", "sys", "builtins"):
+        if type(name) is not str or len(name) > 256 or not re.fullmatch(r"[A-Za-z_]\w*(\.[A-Za-z_]\w*)*", name) or name in ("sys", "builtins") or name == "__main__" and (execution is None or item != m["script"]):
             raise Refusal("Invalid selected module name")
         validate_identity(item)
+    if execution is not None and modules.get("__main__") != m["script"]:
+        raise Refusal("Outcome mode requires the exact entry source identity")
     if type(m["inputs"]) is not list or type(m["arguments"]) is not list or len(m["arguments"]) > 64 or any(type(x) is not str or len(x) > 4096 for x in m["arguments"]):
         raise Refusal("Invalid entry inputs or argument bound")
     for item in [m["engine"], m["script"], *m["inputs"]]:
@@ -185,7 +207,7 @@ def validate_manifest(m):
     i = m["interpreter"]
     if type(i) is not dict or set(i) != {"version", "implementation", "cache_tag", "executable"} or any(type(i[k]) is not str or not 1 <= len(i[k]) <= 4096 for k in ("version", "implementation", "cache_tag")):
         raise Refusal("Invalid interpreter identity")
-    validate_identity(i["executable"])
+    validate_identity(i["executable"], 128 * 1024 * 1024)
     if type(m["max_events"]) is not int or not 1 <= m["max_events"] <= 500000:
         raise Refusal("Invalid return event budget")
     a = m["artifact"]
@@ -194,6 +216,8 @@ def validate_manifest(m):
     path = Path(a)
     if path.is_absolute() or ".." in path.parts or not path.parts or path.parts[0] in {"child", "worker-config.json", "receipt.json", "trace.jsonl.gz", "stdout.txt", "stderr.txt"}:
         raise Refusal("Artifact must be a bounded relative path")
+    if execution is None and m["artifact"] == "outcome.json":
+        raise Refusal("outcome.json is reserved for explicit outcome execution")
     return m
 
 
@@ -201,7 +225,16 @@ def validate_selector(selector):
     if type(selector) is not dict:
         raise Refusal("Invalid selector schema")
     kind = selector.get("kind")
-    if kind == "jsonpath" and set(selector) == {"kind", "pointer", "encoding"}:
+    if kind == "outcome" and set(selector) == {"kind", "stdout_pointer", "stdout_expected"}:
+        pointer, expected = selector["stdout_pointer"], selector["stdout_expected"]
+        if pointer is None:
+            if expected is not None:
+                raise Refusal("Outcome stdout predicate requires both pointer and expected value")
+        elif type(pointer) is not str or not portable(expected) or len(encoded(expected)) > 2048:
+            raise Refusal("Invalid outcome stdout predicate")
+        else:
+            pointer_tokens(pointer)
+    elif kind == "jsonpath" and set(selector) == {"kind", "pointer", "encoding"}:
         if type(selector["pointer"]) is not str or selector["encoding"] not in ("json", "literal"):
             raise Refusal("Invalid JSON selector")
         pointer_tokens(selector["pointer"])
@@ -239,7 +272,7 @@ def validate_patch(patch, manifest):
     if sha(encoded(ancestry)) != event["ancestry_hash"]:
         raise Refusal("Trace evidence ancestry_hash mismatch")
     replacement = patch.get("replacement")
-    if not portable(replacement) or len(encoded(replacement)) > 2048 or replacement[0] != value[0]:
+    if not portable(replacement) or len(encoded(replacement)) > 2048 or replacement[0] != value[0] and not (manifest.get("execution") and replacement == ["none"]):
         raise Refusal("Replacement return type differs or is nonportable")
 
 
@@ -255,7 +288,7 @@ def verify_identities(manifest):
 
 
 def interpreter_identity():
-    return {"version": sys.version, "implementation": sys.implementation.name, "cache_tag": sys.implementation.cache_tag, "executable": identity(Path(sys.executable).resolve())}
+    return {"version": sys.version, "implementation": sys.implementation.name, "cache_tag": sys.implementation.cache_tag, "executable": identity(Path(sys.executable).resolve(), 128 * 1024 * 1024)}
 
 
 class WrapReturns(ast.NodeTransformer):
@@ -279,6 +312,15 @@ class SourceLoader(importlib.abc.Loader):
         return None
 
     def exec_module(self, module):
+        try:
+            return self._execute_module(module)
+        except Refusal as exc:
+            record = getattr(self.capture, "record_refusal", None)
+            if record is not None:
+                record(exc)
+            raise
+
+    def _execute_module(self, module):
         if identity(self.item["path"]) != self.item:
             raise Refusal("Selected module changed before loading")
         source = Path(self.item["path"]).read_bytes()
@@ -385,14 +427,116 @@ def bounded_bytes(path, limit):
     return data
 
 
+def validate_target_outcome(outcome):
+    if type(outcome) is not dict or set(outcome) != {"schema", "kind", "exit_code", "exception", "stdout", "stderr"} or outcome["schema"] != "target-outcome/1" or outcome["kind"] not in ("exit", "exception") or type(outcome["exit_code"]) is not int or not 0 <= outcome["exit_code"] <= 255:
+        raise Refusal("Invalid captured target outcome")
+    for stream in ("stdout", "stderr"):
+        if type(outcome[stream]) is not str or len(outcome[stream].encode("utf-8", errors="strict")) > 131072:
+            raise Refusal("Captured target stream exceeds strict UTF-8 byte bound")
+    exception = outcome["exception"]
+    if outcome["kind"] == "exit":
+        if exception is not None:
+            raise Refusal("Exit outcome cannot carry an exception")
+    else:
+        if outcome["exit_code"] != 1 or type(exception) is not dict or set(exception) != {"type", "message", "frames"} or any(type(exception[k]) is not str or len(exception[k]) > 4096 for k in ("type", "message")) or type(exception["frames"]) is not list or len(exception["frames"]) > 64:
+            raise Refusal("Invalid captured target exception")
+        for frame in exception["frames"]:
+            if type(frame) is not dict or set(frame) != {"file", "function", "line"} or any(type(frame[k]) is not str or len(frame[k]) > 4096 for k in ("file", "function")) or type(frame["line"]) is not int or frame["line"] < 1:
+                raise Refusal("Invalid captured exception source frame")
+    if len(encoded(outcome)) > MAX_ARTIFACT_BYTES:
+        raise Refusal("Captured outcome exceeds artifact budget")
+    return outcome
+
+
+def strict_json_equal(a, b, depth=0):
+    if depth > 100 or type(a) is not type(b):
+        return False
+    if type(a) is dict:
+        return a.keys() == b.keys() and all(strict_json_equal(a[key], b[key], depth + 1) for key in a)
+    if type(a) is list:
+        return len(a) == len(b) and all(strict_json_equal(x, y, depth + 1) for x, y in zip(a, b))
+    return type(a) in (str, int, float, bool, type(None)) and a == b
+
+
+def outcome_goal(outcome, selector):
+    validate_selector(selector)
+    validate_target_outcome(outcome)
+    if selector["kind"] != "outcome":
+        raise Refusal("An outcome selector is required")
+    if outcome["kind"] != "exit" or outcome["exit_code"] != 0:
+        return False
+    if selector["stdout_pointer"] is None:
+        return True
+    try:
+        value, _ = selected_value(outcome["stdout"].encode("utf-8"), {"kind": "jsonpath", "pointer": selector["stdout_pointer"], "encoding": "json"})
+        return strict_json_equal(value, unpacked(selector["stdout_expected"]))
+    except (Refusal, UnicodeError):
+        return False
+
+
+def execute_entry(manifest, capture, observed):
+    # A standalone file gets its real module identity, not an anonymous exec dictionary.
+    item = manifest["script"]
+    tree = ast.parse(bounded_bytes(item["path"], 8 * 1024 * 1024), filename=item["path"])
+    hook = "_causal_return_" + item["sha256"][:16]
+    if any(isinstance(node, ast.Name) and node.id == hook for node in ast.walk(tree)):
+        raise Refusal("Entry instrumentation name collision")
+    if observed:
+        tree = WrapReturns("__main__", hook).visit(tree); ast.fix_missing_locations(tree)
+    previous = sys.modules.get("__main__")
+    module = types.ModuleType("__main__")
+    module.__file__, module.__package__, module.__spec__, module.__cached__ = item["path"], None, None, None
+    module.__dict__[hook] = capture
+    sys.modules["__main__"] = module
+    try:
+        exec(compile(tree, item["path"], "exec"), module.__dict__)
+    finally:
+        if previous is None:
+            sys.modules.pop("__main__", None)
+        else:
+            sys.modules["__main__"] = previous
+
+
+def exit_outcome(code):
+    if code is None:
+        normalized = 0
+    elif type(code) in (int, bool):
+        if not -sys.maxsize - 1 <= code <= sys.maxsize:
+            raise Refusal("SystemExit integer exceeds supported native signed-long range")
+        normalized = int(code) & 255
+    elif type(code) is str:
+        if len(code.encode("utf-8")) + 1 > 131072:
+            raise Refusal("SystemExit message exceeds stream byte bound")
+        sys.stderr.write(code + "\n")
+        normalized = 1
+    else:
+        raise Refusal("Opaque SystemExit values are unsupported")
+    return {"kind": "exit", "exit_code": normalized, "exception": None}
+
+
+def exception_outcome(exc):
+    frames = []
+    trace = exc.__traceback__
+    while trace:
+        filename = trace.tb_frame.f_code.co_filename
+        if filename != str(Path(__file__).resolve()):
+            frames.append({"file": filename, "function": trace.tb_frame.f_code.co_qualname, "line": trace.tb_lineno})
+        trace = trace.tb_next
+    message = str(exc)
+    if len(frames) > 64 or len(message) > 4096:
+        raise Refusal("Target exception exceeds evidence bound")
+    return {"kind": "exception", "exit_code": 1, "exception": {"type": type(exc).__module__ + "." + type(exc).__qualname__, "message": message, "frames": frames}}
+
+
 def worker(config_path):
     config = json.loads(bounded_bytes(config_path, 16 * 1024 * 1024))
     m = config["manifest"]
     base_run = Path(config["run_dir"]).resolve()
     active_run = base_run
+    outcome_mode = "execution" in m
     verify_identities(m)
     selected = {v["path"]: k for k, v in m["modules"].items()}
-    state = {"count": 0, "prefix": START, "applied": False, "trace_bytes": 0, "branch": "baseline", "child_pid": None, "child_wait_status": None, "fork_permission": False, "opaque_count": 0, "opaque_examples": [], "split": None}
+    state = {"count": 0, "prefix": START, "applied": False, "trace_bytes": 0, "branch": "baseline", "child_pid": None, "child_wait_status": None, "fork_permission": False, "opaque_count": 0, "opaque_examples": [], "split": None, "guard_failure": None}
     patch = config.get("patch")
     paired = config["mode"] == "paired"
     if paired:
@@ -402,14 +546,27 @@ def worker(config_path):
     ancestry_seen = set()
     observed = config["mode"] in ("observed", "paired")
 
+    def record_refusal(exc):
+        if state["guard_failure"] is None:
+            state["guard_failure"] = str(exc)[:1000]
+
     def capture(module, site, value):
+        try:
+            if state["guard_failure"] is not None:
+                raise Refusal("Earlier worker contract failure: " + state["guard_failure"])
+            return capture_value(module, site, value, sys._getframe(1))
+        except Refusal as exc:
+            record_refusal(exc)
+            raise
+    capture.record_refusal = record_refusal
+
+    def capture_value(module, site, value, frame):
         nonlocal active_run
         state["count"] += 1
         if state["count"] > m["max_events"]:
             raise Refusal("Observed return-event budget exhausted")
         if state["split"] is not None:
             return value
-        frame = sys._getframe(1)
         ancestry = path_ancestry(frame, selected)
         path_hash = sha(encoded(ancestry))
         opaque = None
@@ -444,7 +601,7 @@ def worker(config_path):
             if opaque is not None or not event["portable"]:
                 raise Refusal("Intervention target is opaque or not retained as a portable value")
             replacement = unpacked(patch["replacement"])
-            if packed(replacement)[0] != q[0] or not portable(patch["replacement"]):
+            if not portable(patch["replacement"]) or packed(replacement)[0] != q[0] and not (outcome_mode and patch["replacement"] == ["none"]):
                 raise Refusal("Replacement return type differs or is nonportable")
             if threading.active_count() != 1 or nonstandard_fds():
                 raise Refusal("Paired split requires one Python thread and no nonstandard open streams")
@@ -454,6 +611,7 @@ def worker(config_path):
                      "guards": "source/input/interpreter/engine/event/value/path/portable-prefix matched", "thread_count": threading.active_count(), "nonstandard_fds": []}
             state["split"] = split
             sys.stdout.flush(); sys.stderr.flush()
+            prefixes = {name: bounded_bytes(base_run / name, m["execution"]["stream_limit"]) for name in ("stdout.txt", "stderr.txt")} if outcome_mode else {}
             state["fork_permission"] = True
             try:
                 pid = os.fork()
@@ -467,6 +625,9 @@ def worker(config_path):
                 for fd, name in ((1, "stdout.txt"), (2, "stderr.txt")):
                     child_fd = os.open(active_run / name, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
                     os.dup2(child_fd, fd); os.close(child_fd)
+                    prefix = prefixes.get(name, b"")
+                    while prefix:
+                        prefix = prefix[os.write(fd, prefix):]
                 return replacement
             state["child_pid"] = pid
             return value
@@ -487,7 +648,7 @@ def worker(config_path):
     standard_library = Path(os.__file__).resolve().parent
     def inside(path, directory):
         return path == directory or directory in path.parents
-    def audit(event, args):
+    def audit_value(event, args):
         if event in ("socket.connect", "socket.connect_ex", "socket.bind", "socket.getaddrinfo", "socket.sendto", "urllib.Request", "http.client.connect", "subprocess.Popen", "os.system", "os.exec", "os.posix_spawn", "ctypes.dlopen"):
             raise Refusal("Network or external child-process activity is unavailable")
         if event == "os.fork" and not state["fork_permission"]:
@@ -510,13 +671,20 @@ def worker(config_path):
             for arg in args[:count]:
                 if isinstance(arg, (str, bytes, os.PathLike)) and not inside(Path(os.fsdecode(arg)).resolve(), active_run):
                     raise Refusal("Filesystem mutation outside owned branch is unsupported")
+    def audit(event, args):
+        try:
+            audit_value(event, args)
+        except Refusal as exc:
+            record_refusal(exc)
+            raise
     sys.addaudithook(audit)
     sys.meta_path.insert(0, SelectedFinder(m, capture, observed))
     for name in m["modules"]:
-        if name in sys.modules:
+        if name != "__main__" and name in sys.modules:
             del sys.modules[name]
 
     def cancelled(signum, frame):
+        record_refusal(Refusal("Owned paired worker cancelled"))
         child = state["child_pid"]
         if child:
             try:
@@ -534,14 +702,36 @@ def worker(config_path):
     error, artifact_info = None, None
     try:
         os.chdir(active_run)
+        target_outcome = None
         try:
-            runpy.run_path(m["script"]["path"], run_name="__main__")
-        except SystemExit as e:
-            if e.code not in (None, 0):
+            if outcome_mode:
+                execute_entry(m, capture, observed)
+                target_outcome = exit_outcome(None)
+            else:
+                runpy.run_path(m["script"]["path"], run_name="__main__")
+        except Refusal:
+            raise
+        except SystemExit as exc:
+            if outcome_mode:
+                target_outcome = exit_outcome(exc.code)
+            elif exc.code not in (None, 0):
                 raise
+        except Exception as exc:
+            if not outcome_mode:
+                raise
+            target_outcome = exception_outcome(exc)
+        if state["guard_failure"] is not None:
+            raise Refusal("Worker contract failure was caught by target: " + state["guard_failure"])
         if paired and state["split"] is None:
             raise Refusal("Intervention target event was not encountered")
         verify_identities(m)
+        if outcome_mode:
+            sys.stdout.flush(); sys.stderr.flush()
+            streams = {name[:-4]: bounded_bytes(active_run / name, m["execution"]["stream_limit"]).decode("utf-8", errors="strict") for name in ("stdout.txt", "stderr.txt")}
+            target_outcome = validate_target_outcome({"schema": "target-outcome/1", **target_outcome, **streams})
+            outcome_file = active_run / "outcome.json"
+            with outcome_file.open("xb") as output:
+                output.write(encoded(target_outcome) + b"\n")
         artifact = active_run / m["artifact"]
         if artifact.is_symlink() or not artifact.is_file() or not inside(artifact.resolve(), active_run):
             raise Refusal("Entry did not produce an ordinary declared artifact")
@@ -651,26 +841,21 @@ def run_once(manifest, root, name, mode, timeout, trace=False, patch=None):
 
 
 def manifest_from_args(args):
-    modules = {}
+    outcome_mode = getattr(args, "capture_outcome", False)
+    if type(outcome_mode) is not bool or outcome_mode and getattr(args, "artifact", None) is not None:
+        raise Refusal("Choose either artifact output or explicit outcome capture")
+    script = identity(args.script)
+    modules = {"__main__": script} if outcome_mode else {}
     for declaration in args.module:
-        if "=" not in declaration:
+        if type(declaration) is not str or "=" not in declaration:
             raise Refusal("Module declaration must be name=source.py")
         name, path = declaration.split("=", 1)
-        if not re.fullmatch(r"[A-Za-z_]\w*(\.[A-Za-z_]\w*)*", name) or name in modules:
-            raise Refusal("Invalid or duplicate selected module")
-        if name in ("__main__", "sys", "builtins"):
-            raise Refusal("Cannot replace a core runtime module")
+        if not re.fullmatch(r"[A-Za-z_]\w*(\.[A-Za-z_]\w*)*", name) or name in modules or name in ("__main__", "sys", "builtins"):
+            raise Refusal("Invalid, duplicate or core selected module")
         modules[name] = identity(path)
-    if not modules or len(modules) > 16:
-        raise Refusal("Select between one and sixteen source modules")
-    artifact = Path(args.artifact)
-    if artifact.is_absolute() or ".." in artifact.parts or not artifact.parts or artifact.parts[0] in {"child", "worker-config.json", "receipt.json", "trace.jsonl.gz", "stdout.txt", "stderr.txt"} or len(str(artifact)) > 256:
-        raise Refusal("Artifact must be a bounded relative path")
-    if len(args.arg) > 64 or any(len(x) > 4096 for x in args.arg):
-        raise Refusal("Entry argument bound exceeded")
-    if not 1 <= args.max_events <= 500000:
-        raise Refusal("Invalid return event budget")
-    m = {"schema": SCHEMA, "interpreter": interpreter_identity(), "engine": identity(__file__), "script": identity(args.script), "modules": modules, "inputs": [identity(x) for x in args.input], "arguments": args.arg, "artifact": str(artifact), "max_events": args.max_events}
+    m = {"schema": SCHEMA, "interpreter": interpreter_identity(), "engine": identity(__file__), "script": script, "modules": modules, "inputs": [identity(x) for x in args.input], "arguments": args.arg, "artifact": "outcome.json" if outcome_mode else args.artifact, "max_events": args.max_events}
+    if outcome_mode:
+        m["execution"] = {"schema": "target-outcome/1", "instrument_entry": True, "stream_limit": 131072}
     return validate_manifest(m)
 
 
@@ -807,6 +992,8 @@ def html_collateral(before, after):
 
 def selected_value(data, selector):
     validate_selector(selector)
+    if selector["kind"] == "outcome":
+        return outcome_goal(decode_artifact(data, "json"), selector), None
     if selector["kind"] == "html":
         return html_tree(data).selected(selector["id"], selector["following_element_sibling"]), None
     if selector["kind"] == "text":
@@ -861,9 +1048,12 @@ def primitive_members(p, limit=16):
     return []
 
 
-def replacement_values(p):
+def replacement_values(p, outcome_mode=False):
     v = unpacked(p)
     t = type(v)
+    if outcome_mode:
+        previous = replacement_values(p)
+        return ([["none"]] if p != ["none"] else []) + previous
     if t is bool:
         return [packed(not v)]
     if t is int:
@@ -937,24 +1127,34 @@ def search(args):
     original = bounded_bytes(artifact_path, MAX_ARTIFACT_BYTES)
     if sha(original) != observation["observed"]["artifact"]["sha256"]:
         raise Refusal("Observed artifact changed")
-    if sum(x is not None for x in (args.html_id, args.pointer, args.start)) != 1:
+    successful_exit = getattr(args, "successful_exit", False)
+    if sum(x is not None for x in (args.html_id, args.pointer, args.start)) + int(bool(successful_exit)) != 1:
         raise Refusal("Exactly one output selector is required")
-    if args.html_id is not None:
+    if successful_exit:
+        if "execution" not in m:
+            raise Refusal("Successful-exit search requires explicit outcome capture")
+        pointer, equal = getattr(args, "stdout_pointer", None), getattr(args, "stdout_equals", None)
+        if (pointer is None) != (equal is None):
+            raise Refusal("Outcome stdout predicate requires both pointer and JSON expected value")
+        selector = {"kind": "outcome", "stdout_pointer": pointer, "stdout_expected": packed(decode_artifact(equal.encode("utf-8"), "json")) if equal is not None else None}
+    elif args.html_id is not None:
         selector = {"kind": "html", "id": args.html_id, "following_element_sibling": args.html_next_sibling}
     elif args.pointer is not None:
         selector = {"kind": "jsonpath", "pointer": args.pointer, "encoding": args.encoding}
     else:
         selector = {"kind": "text", "start": args.start, "end": args.end}
     target, parent = selected_value(original, selector)
+    if selector["kind"] == "outcome" and target:
+        raise Refusal("Target baseline already satisfies the selected outcome goal")
     root = create_dir(args.out)
     candidates = []
     for event in load_events(Path(observation["observed"]["directory"]) / "trace.jsonl.gz"):
         if not event["portable"]:
             continue
-        replacements = replacement_values(event["packed"])
+        replacements = replacement_values(event["packed"], "execution" in m)
         if not replacements:
             continue
-        priority = candidate_priority(event, target, parent, selector["kind"] in ("text", "html"))
+        priority = (-event["id"],) if selector["kind"] == "outcome" else candidate_priority(event, target, parent, selector["kind"] in ("text", "html"))
         if priority is not None:
             candidates.append((priority, event, replacements))
     candidates.sort(key=lambda x: x[0])
@@ -978,6 +1178,8 @@ def search(args):
                     trial["selected_changed"] = type(new_target) is not type(target) or new_target != target
                     if selector["kind"] == "html":
                         trial["collateral"] = html_collateral(original, after)
+                    elif selector["kind"] == "outcome":
+                        trial["collateral"] = changes(decode_artifact(original, "json"), decode_artifact(after, "json"))
                     elif selector["kind"] == "jsonpath":
                         trial["collateral"] = changes(decode_artifact(original, selector["encoding"]), decode_artifact(after, selector["encoding"]))
                     else:
@@ -1015,6 +1217,8 @@ def replay(args):
         raise Refusal("Plan manifest hash mismatch")
     verify_identities(m)
     validate_selector(plan.get("selector"))
+    if plan["selector"]["kind"] == "outcome" and "execution" not in m:
+        raise Refusal("Outcome selector requires explicit capture mode")
     validate_patch(plan, m)
     root = create_dir(args.out)
     baseline = run_once(m, root, "fresh-baseline", "plain", args.timeout)
@@ -1022,6 +1226,8 @@ def replay(args):
         raise Refusal("Fresh baseline differs from recorded experiment")
     before = bounded_bytes(Path(baseline["directory"]) / m["artifact"], MAX_ARTIFACT_BYTES)
     target, _ = selected_value(before, plan["selector"])
+    if plan["selector"]["kind"] == "outcome" and target:
+        raise Refusal("Target baseline already satisfies the selected outcome goal")
     result = run_once(m, root, "paired-experiment", "paired", args.timeout, patch=plan)
     selected_changed, collateral = False, None
     if result["ok"]:
@@ -1037,6 +1243,8 @@ def replay(args):
                 raise Refusal("Actual paired selector did not change from the verified baseline")
             if plan["selector"]["kind"] == "html":
                 collateral = html_collateral(parent, after)
+            elif plan["selector"]["kind"] == "outcome":
+                collateral = changes(decode_artifact(parent, "json"), decode_artifact(after, "json"))
             elif plan["selector"]["kind"] == "jsonpath":
                 collateral = changes(decode_artifact(parent, plan["selector"]["encoding"]), decode_artifact(after, plan["selector"]["encoding"]))
             else:
@@ -1057,11 +1265,13 @@ def parser():
     o = sub.add_parser("observe")
     o.add_argument("--script", required=True); o.add_argument("--module", action="append", default=[])
     o.add_argument("--input", action="append", default=[]); o.add_argument("--arg", action="append", default=[])
-    o.add_argument("--artifact", required=True); o.add_argument("--out", required=True)
+    output = o.add_mutually_exclusive_group(required=True); output.add_argument("--artifact"); output.add_argument("--capture-outcome", action="store_true")
+    o.add_argument("--out", required=True)
     o.add_argument("--max-events", type=int, default=300000); o.add_argument("--timeout", type=float, default=30)
     s = sub.add_parser("search")
     s.add_argument("--observation", required=True); s.add_argument("--out", required=True)
-    g = s.add_mutually_exclusive_group(required=True); g.add_argument("--pointer"); g.add_argument("--start", type=int); g.add_argument("--html-id")
+    g = s.add_mutually_exclusive_group(required=True); g.add_argument("--pointer"); g.add_argument("--start", type=int); g.add_argument("--html-id"); g.add_argument("--successful-exit", action="store_true")
+    s.add_argument("--stdout-pointer"); s.add_argument("--stdout-equals")
     s.add_argument("--html-next-sibling", type=int, default=0)
     s.add_argument("--end", type=int); s.add_argument("--encoding", choices=("json", "literal"), default="json")
     s.add_argument("--max-trials", type=int, default=128); s.add_argument("--seconds", type=float, default=120); s.add_argument("--timeout", type=float, default=30)

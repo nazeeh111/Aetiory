@@ -103,7 +103,19 @@ def experiment(observation_path, search_path, title="A paired return experiment"
     selected_after, _ = engine.selected_value(after, selector)
     if type(selected_before) is type(selected_after) and selected_before == selected_after:
         raise engine.Refusal("Selected value did not change")
-    if selector["kind"] == "html":
+    if selector["kind"] == "outcome":
+        original_outcome = engine.validate_target_outcome(engine.decode_artifact(before, "json"))
+        alternate_outcome = engine.validate_target_outcome(engine.decode_artifact(after, "json"))
+        if engine.outcome_goal(original_outcome, selector) or not engine.outcome_goal(alternate_outcome, selector):
+            raise engine.Refusal("Retained actual outcomes do not satisfy the requested failure-to-success goal")
+        view_selector = {"kind": "successful-exit", "stdout_pointer": selector["stdout_pointer"],
+                         "stdout_expected": selector["stdout_expected"]}
+        changes = [{"path": "Requested successful outcome", "before": False, "after": True, "selected": True}]
+        for change in full_changes(original_outcome, alternate_outcome):
+            change["selected"] = False
+            changes.append(change)
+        media = "application/json"
+    elif selector["kind"] == "html":
         view_selector = {"kind": "html-id-following-element-sibling", "id": selector["id"], "sibling": selector["following_element_sibling"]}
         trees = engine.html_tree(before), engine.html_tree(after)
         changes = []
@@ -152,7 +164,7 @@ def experiment(observation_path, search_path, title="A paired return experiment"
     expected = engine.unpacked(plan["trace_evidence"]["packed"])
     replacement = engine.unpacked(plan["replacement"])
     return {"id": plan["event"]["module"] + "-" + str(event["id"]), "title": title,
-        "summary": f"Automatic search tested {search['trial_count']} paired trials from {search['candidate_count']} eligible return candidates. The original parent and fresh undo matched the baseline bytes.",
+        "summary": f"Automatic search tested {search['trial_count']} paired trials from {search['candidate_count']} eligible return candidates. The original parent and fresh undo matched the baseline bytes." + (" The original failure is preserved; the alternate reaches the selected exit/stdout goal. This is a diagnostic return experiment, not a source repair." if selector["kind"] == "outcome" else ""),
         "mode": "recorded", "status": "accepted", "selector": view_selector,
         "artifacts": {side: {"text": body.decode("utf-8", errors="strict"), "media_type": media, "sha256": engine.sha(body)} for side, body in (("before", before), ("after", after))},
         "event": {"id": event["id"], "site": event["site"], "occurrence": occurrence,

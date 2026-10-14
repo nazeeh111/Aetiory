@@ -3,8 +3,8 @@
 The engine, agent adapter, exporter, viewer and entry scripts are original Aetiory
 implementation under MIT.
 
-Recorded source context comes from CPython 3.14.7's unmodified `difflib.py` and
-`pprint.py`. Python's source license and bundled notices are retained in
+Recorded source context comes from CPython3.14.7's unmodified `difflib.py` and
+`pprint.py`, and installed CPython3.13's unmodified `argparse.py`. Python's source license and bundled notices are retained in
 `licenses/PSF.txt`; source hashes accompany the experiments. Local reproductions
 use the current installed Python source rather than downloading another runtime.
 
@@ -19,7 +19,7 @@ fixtures is claimed.
 Tracing, dynamic program slicing and process fork have long-standing precedents.
 noWorkflow, Whyline and mature debuggers already expose useful execution evidence.
 Aetiory's contribution is the particular artifact-selection, automatic paired
-return trial, guarded replay and portable evidence workflow. No first-in-history
+return trial, outcome-first failure investigation, guarded replay and portable evidence workflow. No first-in-history
 or universal superiority claim is made.
 
 

@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aetiory"
-version = "0.1.0"
-description = "Choose an output, find an influential Python return, and replay its paired effect."
+version = "0.2.0"
+description = "Diagnose failed Python programs with paired return experiments and guarded replay."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"

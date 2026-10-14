@@ -9,14 +9,18 @@ def main():
     if not sys.argv[1:] or sys.argv[1:] in (["--help"], ["-h"]):
         parser = argparse.ArgumentParser(description="Choose an output. Test upstream returns in paired live Python execution.")
         sub = parser.add_subparsers(dest="command")
-        for name, help_text in (("observe", "Pin sources and require plain/instrumented byte parity"),
+        for name, help_text in (("diagnose", "Find a return that changes a failure into a requested successful outcome"),
+                                ("observe", "Pin sources and require plain/instrumented byte parity"),
                                 ("search", "Find a return that changes a stable selected output"),
                                 ("replay", "Repeat a pinned paired intervention and fresh undo"),
                                 ("export", "Export retained evidence to portable HTML and JSON"),
-                                ("mcp", "Expose four trusted local tools over MCP stdio")):
+                                ("mcp", "Expose trusted local tools over MCP stdio")):
             sub.add_parser(name, help=help_text)
         parser.print_help()
         return 0
+    if sys.argv[1:2] == ["diagnose"]:
+        from .diagnose import main as diagnose
+        return diagnose(sys.argv[2:])
     if sys.argv[1:2] == ["mcp"]:
         from .mcp import main as mcp
         return mcp(sys.argv[2:])

@@ -1,6 +1,6 @@
 # Aetiory
 
-**Choose an output. Find the Python decision that changes it. Replay the effect.**
+**Give a failed Python program an alternate future. Keep the original beside it.**
 
 Aetiory tests actual return decisions against a selected result. At a guarded return,
 it forks the running computation: one process keeps the original value, the other
@@ -9,7 +9,7 @@ the baseline, the selected output changes, and a fresh unchanged run restores
 the original bytes.
 
 No model API, runtime dependencies or source edits. A CLI runs the experiment;
-four local agent tools expose the same engine. A read-only studio keeps the
+five local agent tools expose the same engine. A read-only studio keeps the
 output, source context, observed call path, collateral and checks together.
 
 ![Actual recorded paired output and measured collateral](docs/images/studio.png)
@@ -27,7 +27,7 @@ it does not roll back files, network activity or other external effects.
 ```sh
 python3 -m venv .venv
 . .venv/bin/activate
-python -m pip install --no-deps ./aetiory-0.1.0-py3-none-any.whl
+python -m pip install --no-deps ./aetiory-0.2.0-py3-none-any.whl
 aetiory --help
 ```
 
@@ -35,6 +35,45 @@ Download the wheel from Releases first, or install a source checkout with
 `python -m pip install --no-deps .`. The source build needs setuptools;
 the wheel has no runtime dependencies. Nothing registers an agent integration
 or changes your application settings automatically.
+
+## From failure to a tested alternate outcome
+
+Run a trusted standalone Python source file unchanged. Aetiory captures its real
+exception or exit status, stdout and stderr, then automatically tests earlier
+returns in paired native processes. A found result must reproduce in a fresh run
+before the command exports a portable investigation.
+
+```sh
+aetiory diagnose --script your_program.py --out experiments/failure
+```
+
+Exit0 alone does not establish that a program did the right thing. For programs
+that write JSON to stdout, require the value you actually need:
+
+```sh
+aetiory diagnose --script your_program.py --out experiments/failure \
+  --stdout-pointer /result --stdout-equals '{"count":9,"checksum":45}'
+```
+
+The entry itself is observed, with real `__main__` module identity. Select
+additional source modules using `--module name=/absolute/source.py`; declare
+file inputs with `--input`, and pass each target argument using `--arg=VALUE`.
+No wrapper or artifact-writing change is needed. The result retains:
+
+- The original failure beside the alternate exit and complete bounded logs.
+- The actual return, observed callers and source context at the native split.
+- Every attempted trial, fresh replay, unchanged undo and a portable viewer.
+
+`diagnosis.json` distinguishes `diagnosed`, `unresolved` and `refused`. CLI exit
+codes are0,2 and3 respectively. A target exception is a captured outcome;
+an engine refusal, unsupported stream, quota exhaustion or timeout is not.
+Captured stdout and stderr are each limited to128KiB of strict UTF-8. The
+child includes the exact output emitted before the split. A discovered return
+is a diagnostic counterfactual, **not a source patch or a correctness proof**.
+
+The existing artifact workflow below remains available. For direct failure
+capture in separate steps, use `observe --capture-outcome`, then
+`search --successful-exit` and optionally the same stdout predicate.
 
 ## From an artifact to an experiment
 
@@ -80,6 +119,30 @@ standard-library sources. It retains failed/no-effect trials too. Different
 interpreters or input versions require new observations; an old plan is not
 silently relocated or rewritten. Large traces and repeated executions can take
 minutes. An unresolved search is an honest result.
+
+## Two failure investigations
+
+| Program | Original outcome | Verified alternate |
+|---|---|---|
+| Scientific CLI through unchanged CPython3.13 `argparse` | Negative scientific notation is interpreted as an option; exit2 | The upstream option classifier returns `None`; exit0 and actual parsed `param=-3e12` |
+| Owned CSV partitioner,9 records over128 workers | Floor allocation returns0; `itertools.batched` raises `ValueError` | The entry's capacity return becomes1; all9 records and the full total remain verified |
+
+The first reproduces [CPython#105712](https://github.com/python/cpython/issues/105712),
+not a newly discovered defect. Python3.14 already accepts this input, and passing
+`-p=-3e12` is a simpler workaround. The second is an owned workload with a
+retained defect, not a reported upstream bug or production customer. Both require
+actual output, preserve the original failure and perform fresh replay/undo.
+
+Try the CSV case on Python3.12+:
+
+```sh
+aetiory diagnose --script examples/partition_records.py \
+  --input examples/inputs/records.csv \
+  --arg /absolute/path/to/examples/inputs/records.csv --arg 128 \
+  --stdout-pointer '' \
+  --stdout-equals '{"records":9,"batches":9,"total":3370}' \
+  --out experiments/batching
+```
 
 ## Two concrete questions
 
