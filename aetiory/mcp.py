@@ -50,6 +50,18 @@ def schema(properties, required):
 STRING = {"type": "string", "maxLength": 4096}
 TIMEOUT = {"type": "number", "minimum": .01, "maximum": 300}
 TOOLS = [
+    {"name": "diagnose_program", "description":
+     "Run a trusted standalone Python script, preserve its failure, and search earlier returns for exit0 with an optional exact parsed JSON stdout value. Fresh paired replay, unchanged undo and portable evidence are required. This does not edit or repair source; not a sandbox.",
+     "inputSchema": schema({"script": STRING,
+       "modules": {"type": "object", "maxProperties": 15, "additionalProperties": STRING},
+       "inputs": {"type": "array", "maxItems": 16, "items": STRING},
+       "arguments": {"type": "array", "maxItems": 64, "items": STRING},
+       "stdout_pointer": STRING, "stdout_equals": STRING,
+       "title": {"type": "string", "minLength": 1, "maxLength": 256},
+       "max_events": {"type": "integer", "minimum": 1, "maximum": 500000},
+       "max_trials": {"type": "integer", "minimum": 1, "maximum": 512},
+       "seconds": {"type": "number", "minimum": .01, "maximum": 600},
+       "timeout": TIMEOUT}, ["script"])},
     {"name": "observe_program", "description":
      "Execute a trusted workspace Python script twice; require plain/instrumented artifact byte parity. Explicit modules are workspace source paths or stdlib:NAME. This executes with your user privileges; not a sandbox.",
      "inputSchema": schema({"script": STRING,
@@ -168,6 +180,8 @@ class Server:
                 result.update(event=report["event"], selector=report["selector"],
                     replacement=report["replacement"], trace_evidence=report["trace_evidence"],
                     observed_effect=report["observed_effect"])
+            elif report["kind"] == "diagnosis":
+                result.update({k: report[k] for k in ("source_repair", "reason", "meaning", "viewer_file", "experiment_file") if k in report})
             else:
                 result.update(plain=report["plain"], observed=report["observed"])
             result["report_file"] = str(self.handle(arguments["handle"]))
@@ -175,6 +189,47 @@ class Server:
         # Import only after path/argument validation; no provider API is involved.
         output = self.state / secrets.token_hex(16)
         timeout = number(arguments.get("timeout", 30), .01, 300)
+        if name == "diagnose_program":
+            script = self.workspace_file(arguments["script"])
+            modules = arguments.get("modules", {})
+            if not isinstance(modules, dict) or len(modules) > 15:
+                raise ValueError("Select at most15 additional source modules")
+            declarations = []
+            for module, path in modules.items():
+                if not re.fullmatch(r"[A-Za-z_]\w*(\.[A-Za-z_]\w*)*", module) or module in ("__main__", "sys", "builtins"):
+                    raise ValueError("Invalid selected module name")
+                declarations.append(module + "=" + str(self.module_file(path)))
+            inputs = arguments.get("inputs", [])
+            if not isinstance(inputs, list) or len(inputs) > 16:
+                raise ValueError("Declare at most16 input files")
+            inputs = [str(self.workspace_file(x)) for x in inputs]
+            tokens = arguments.get("arguments", [])
+            if not isinstance(tokens, list) or len(tokens) > 64:
+                raise ValueError("Pass at most64 argument tokens")
+            resolved = []
+            for value in tokens:
+                value = text(value)
+                if value.startswith("@input:"):
+                    index = value[7:]
+                    if not index.isdigit() or int(index) >= len(inputs):
+                        raise ValueError("Input argument references an undeclared file")
+                    value = inputs[int(index)]
+                resolved.append(value)
+            from .diagnose import diagnose
+            report = diagnose(SimpleNamespace(script=str(script), module=declarations, input=inputs,
+                arg=resolved, out=str(output), timeout=timeout,
+                stdout_pointer=text(arguments["stdout_pointer"]) if "stdout_pointer" in arguments else None,
+                stdout_equals=text(arguments["stdout_equals"]) if "stdout_equals" in arguments else None,
+                title=text(arguments.get("title", "Why did this script fail?"), 256),
+                max_events=number(arguments.get("max_events", 300000), 1, 500000, True),
+                max_trials=number(arguments.get("max_trials", 128), 1, 512, True),
+                seconds=number(arguments.get("seconds", 120), .01, 600)))
+            result = {**report, "diagnosis": self.remember(output / "diagnosis.json", "diagnosis")}
+            for key, kind in (("observation_file", "observation"), ("search_file", "search"),
+                              ("intervention_file", "intervention"), ("replay_file", "replay")):
+                if key in report:
+                    result[kind] = self.remember(report[key], kind)
+            return result
         if name == "observe_program":
             script = self.workspace_file(arguments["script"])
             modules = arguments["modules"]
@@ -262,7 +317,7 @@ class Server:
                 raise ProtocolError("Invalid initialize parameters", -32602)
             self.initialized = True
             return {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                    "serverInfo": {"name": "aetiory", "version": "0.1.0"},
+                    "serverInfo": {"name": "aetiory", "version": "0.2.0"},
                     "instructions": "Only execute trusted workspace Python. Fork experiments do not sandbox code or roll back external effects. Tool calls are sequential and time-bounded; mid-call MCP cancellation is not supported. Handles are session-local; retained reports remain on disk."}
         if method == "ping":
             return {}

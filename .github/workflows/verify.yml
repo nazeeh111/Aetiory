@@ -30,6 +30,7 @@ jobs:
         run: |
           node aetiory/web/checks.mjs
           node aetiory/web/controller-checks.mjs
+          node aetiory/web/failure-checks.mjs
           node aetiory/web/portable-check.mjs aetiory/web/recorded-proof.html
       - name: Build dependency-free wheel
         run: |

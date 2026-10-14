@@ -21,7 +21,7 @@ class BoundaryTests(unittest.TestCase):
         with self.assertRaises(ProtocolError):
             self.server.dispatch({'jsonrpc':'2.0','id':3,'method':'tools/list'})
         self.server.dispatch({'jsonrpc':'2.0','method':'notifications/initialized'})
-        self.assertEqual(len(self.server.dispatch({'jsonrpc':'2.0','id':4,'method':'tools/list'})['tools']), 4)
+        self.assertEqual(len(self.server.dispatch({'jsonrpc':'2.0','id':4,'method':'tools/list'})['tools']), 5)
 
     def test_workspace_escape_and_symlinks_refused(self):
         outside = self.root.parent / ('outside-' + self.root.name)
