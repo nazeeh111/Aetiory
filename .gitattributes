@@ -1,0 +1,7 @@
+# Generated investigation bytes are evidence, not the engine's source language.
+aetiory/web/recorded-proof.html linguist-generated=true
+aetiory/web/demo.json linguist-generated=true
+aetiory/web/VIEWER_CHECKS.json linguist-generated=true
+aetiory/web/NOTICES.txt linguist-generated=true
+# The Pages copy and written guides are documentation.
+docs/** linguist-documentation=true
