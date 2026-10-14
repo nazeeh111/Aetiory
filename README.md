@@ -27,7 +27,7 @@ it does not roll back files, network activity or other external effects.
 ```sh
 python3 -m venv .venv
 . .venv/bin/activate
-python -m pip install --no-deps ./aetiory-0.2.0-py3-none-any.whl
+python -m pip install --no-deps ./aetiory-0.2.1-py3-none-any.whl
 aetiory --help
 ```
 

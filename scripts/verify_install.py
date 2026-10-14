@@ -9,7 +9,7 @@ from aetiory import __version__, engine
 from aetiory.export import experiment, export_record
 from aetiory.mcp import Server
 
-assert __version__ == '0.2.0'
+assert __version__ == '0.2.1'
 source_root = Path(__file__).resolve().parents[1]
 assert not Path(engine.__file__).resolve().is_relative_to(source_root)
 resources = importlib.resources.files('aetiory.web')

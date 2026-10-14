@@ -317,7 +317,7 @@ class Server:
                 raise ProtocolError("Invalid initialize parameters", -32602)
             self.initialized = True
             return {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                    "serverInfo": {"name": "aetiory", "version": "0.2.0"},
+                    "serverInfo": {"name": "aetiory", "version": "0.2.1"},
                     "instructions": "Only execute trusted workspace Python. Fork experiments do not sandbox code or roll back external effects. Tool calls are sequential and time-bounded; mid-call MCP cancellation is not supported. Handles are session-local; retained reports remain on disk."}
         if method == "ping":
             return {}
