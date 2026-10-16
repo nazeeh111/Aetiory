@@ -1,22 +1,30 @@
 # Aetiory
 
-**Give a failed Python program an alternate future. Keep the original beside it.**
+**Diagnose failed Python runs by testing an earlier return.**
 
-Aetiory tests actual return decisions against a selected result. At a guarded return,
-it forks the running computation: one process keeps the original value, the other
-gets a replacement. An influence counts only when the original process matches
-the baseline, the selected output changes, and a fresh unchanged run restores
-the original bytes.
+[![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-1755ad?logo=python&logoColor=white)](docs/EXECUTION.md)
+[![Linux · macOS](https://img.shields.io/badge/native_fork-Linux_%C2%B7_macOS-334155)](docs/EXECUTION.md)
+[![No runtime dependencies](https://img.shields.io/badge/runtime_dependencies-0-334155)](pyproject.toml)
+[![MIT](https://img.shields.io/badge/license-MIT-334155)](LICENSE)
 
-No model API, runtime dependencies or source edits. A CLI runs the experiment;
-five local agent tools expose the same engine. A read-only studio keeps the
-output, source context, observed call path, collateral and checks together.
+At a selected return, Aetiory forks the live computation. One process keeps the
+original value; the other gets a replacement. It compares the result, replays the
+experiment, and runs an unchanged control. Source files stay unchanged.
 
-![Actual recorded paired output and measured collateral](docs/images/studio.png)
+![Installed CSV diagnosis: original ValueError beside exit 0 and nine recovered records](docs/images/diagnosis.png)
 
-[Explore the recorded studio](https://nazeeh111.github.io/Aetiory/) ·
-[Download a release](https://github.com/nazeeh111/Aetiory/releases) ·
-[Agent integration](docs/AGENTS.md) · [Execution contract](docs/EXECUTION.md)
+Nine records,128 workers: the owned example returns a batch capacity of0 and
+raises `ValueError`. Replacing that return with1 reaches exit0 and preserves all
+nine records and their total of3370. This is a diagnostic experiment, not a patch.
+
+[Inspect the recorded studio](https://nazeeh111.github.io/Aetiory/) ·
+[Run this complete case](#try-the-complete-csv-investigation) ·
+[Download](https://github.com/nazeeh111/Aetiory/releases) ·
+[Agent tools](docs/AGENTS.md)
+
+The CLI executes trusted local Python. The studio only inspects records, with
+original/alternate output, selected return, observed callers and guard receipts.
+No model API or runtime dependencies.
 
 ## Start locally
 
@@ -27,7 +35,7 @@ it does not roll back files, network activity or other external effects.
 ```sh
 python3 -m venv .venv
 . .venv/bin/activate
-python -m pip install --no-deps ./aetiory-0.2.1-py3-none-any.whl
+python -m pip install --no-deps ./aetiory-0.2.2-py3-none-any.whl
 aetiory --help
 ```
 
@@ -36,44 +44,66 @@ Download the wheel from Releases first, or install a source checkout with
 the wheel has no runtime dependencies. Nothing registers an agent integration
 or changes your application settings automatically.
 
-## From failure to a tested alternate outcome
+## Try the complete CSV investigation
 
-Run a trusted standalone Python source file unchanged. Aetiory captures its real
-exception or exit status, stdout and stderr, then automatically tests earlier
-returns in paired native processes. A found result must reproduce in a fresh run
-before the command exports a portable investigation.
+From a source checkout after installing Aetiory, use Python3.12+ for this example
+(it uses `itertools.batched`). Every output directory must be new.
+
+```sh
+aetiory diagnose --script examples/partition_records.py \
+  --input examples/inputs/records.csv \
+  --arg "$(pwd)/examples/inputs/records.csv" --arg 128 \
+  --stdout-pointer '' \
+  --stdout-equals '{"records":9,"batches":9,"total":3370}' \
+  --out experiments/batching
+```
+
+Open `experiments/batching/viewer/index.html` offline. Use **Result → Return →
+Checks** to follow the same investigation:
+
+| Inspect | Actual installed Python3.14 run |
+|---|---|
+| Original | `ValueError: n must be at least one`, exit1 |
+| Selected return | `planned_capacity`, line10: `0 → 1` |
+| Alternate | Exit0,9 records,9 batches,total3370 |
+| Replay and control | Fresh paired replay reproduced both outcomes; fresh unchanged run matched the original bytes |
+
+![Actual selected return 0 to 1 beside the unchanged Python source](docs/images/return.png)
+
+This run tested two paired trials from one eligible return candidate. It is an
+owned workload with a retained defect. It is not an upstream bug, a customer
+case, or a correctness proof for other inputs. Reproduction records the local
+interpreter and source identities; different versions require a new observation.
+
+## Diagnose your own failure
+
+Run a trusted standalone source file unchanged:
 
 ```sh
 aetiory diagnose --script your_program.py --out experiments/failure
 ```
 
-Exit0 alone does not establish that a program did the right thing. For programs
-that write JSON to stdout, require the value you actually need:
+Exit0 alone does not establish that the program did the right thing. For JSON
+stdout, require the value you actually need:
 
 ```sh
 aetiory diagnose --script your_program.py --out experiments/failure \
   --stdout-pointer /result --stdout-equals '{"count":9,"checksum":45}'
 ```
 
-The entry itself is observed, with real `__main__` module identity. Select
-additional source modules using `--module name=/absolute/source.py`; declare
-file inputs with `--input`, and pass each target argument using `--arg=VALUE`.
-No wrapper or artifact-writing change is needed. The result retains:
+The entry is observed with real `__main__` identity. Select additional source
+modules with `--module name=/absolute/source.py`, declare file inputs with
+`--input`, and pass each target argument with `--arg=VALUE`.
 
-- The original failure beside the alternate exit and complete bounded logs.
-- The actual return, observed callers and source context at the native split.
-- Every attempted trial, fresh replay, unchanged undo and a portable viewer.
+`diagnosis.json` distinguishes `diagnosed`, `unresolved` and `refused`; CLI exit
+codes are0,2 and3 respectively. A target exception is a captured outcome; an
+engine refusal, unsupported stream, quota exhaustion or timeout is not.
+Stdout and stderr are each limited to128KiB of strict UTF-8, including output
+emitted before the split. Retained trials, source context, observed callers,
+fresh replay and unchanged control stay together in the portable viewer.
 
-`diagnosis.json` distinguishes `diagnosed`, `unresolved` and `refused`. CLI exit
-codes are0,2 and3 respectively. A target exception is a captured outcome;
-an engine refusal, unsupported stream, quota exhaustion or timeout is not.
-Captured stdout and stderr are each limited to128KiB of strict UTF-8. The
-child includes the exact output emitted before the split. A discovered return
-is a diagnostic counterfactual, **not a source patch or a correctness proof**.
-
-The existing artifact workflow below remains available. For direct failure
-capture in separate steps, use `observe --capture-outcome`, then
-`search --successful-exit` and optionally the same stdout predicate.
+For separate capture and search, use `observe --capture-outcome`, then
+`search --successful-exit` with an optional stdout predicate.
 
 ## From an artifact to an experiment
 
@@ -133,17 +163,6 @@ not a newly discovered defect. Python3.14 already accepts this input, and passin
 retained defect, not a reported upstream bug or production customer. Both require
 actual output, preserve the original failure and perform fresh replay/undo.
 
-Try the CSV case on Python3.12+:
-
-```sh
-aetiory diagnose --script examples/partition_records.py \
-  --input examples/inputs/records.csv \
-  --arg /absolute/path/to/examples/inputs/records.csv --arg 128 \
-  --stdout-pointer '' \
-  --stdout-equals '{"records":9,"batches":9,"total":3370}' \
-  --out experiments/batching
-```
-
 ## Two concrete questions
 
 | Question | Real input | What the experiment measures |
@@ -202,6 +221,3 @@ observed versus expected behavior, and a retained refusal or trial receipt.
 MIT for the original implementation. CPython source excerpts retain the PSF
 license; native sample provenance retains its Manifold Apache-2.0 notice.
 [Third-party notices](THIRD_PARTY_NOTICES.md) explain each included item.
-
-If this workflow helps you investigate a real program, a reproducible case or
-focused issue is especially valuable. Stars make the project easier to find.
