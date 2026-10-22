@@ -34,4 +34,14 @@ const genuine=JSON.parse(fs.readFileSync(new URL('./demo.json',import.meta.url))
 const nativeParse=JSON.parse;JSON.parse=(text,reviver)=>nativeParse(text,reviver?((key,value)=>reviver(key,value)):undefined);
 try{const unavailable=receiptAssessment(genuine,{before:'match',after:'match'});assert.equal(unavailable.accepted,false);assert.equal(unavailable.contradictory,false);assert.equal(unavailable.downloadAfter,false);checks+=3;}finally{JSON.parse=nativeParse;}
 if(process.argv[2]){const real=JSON.parse(fs.readFileSync(process.argv[2]));validatePayload(real);for(const r of real.experiments.filter(x=>x.selector.kind==='successful-exit')){for(const side of ['before','after'])assert.equal(await hashText(r.artifacts[side].text),r.artifacts[side].sha256);assert.equal(receiptAssessment(r,{before:'match',after:'match'}).accepted,true);checks+=3;}}
+for(const url of [new URL('./demo.json',import.meta.url),new URL('./recorded-proof.html',import.meta.url),new URL('../../docs/demo.json',import.meta.url),new URL('../../docs/failure-evidence.json',import.meta.url)]){assert(!/(?:\/Users\/|\/home\/)[A-Za-z0-9._-]+\//.test(fs.readFileSync(url,'utf8')));checks++;}
+const publishedRecord=JSON.parse(fs.readFileSync(new URL('./demo.json',import.meta.url)));
+assert.deepEqual(JSON.parse(fs.readFileSync(new URL('../../docs/demo.json',import.meta.url))),publishedRecord);checks++;
+const portableHtml=fs.readFileSync(new URL('./recorded-proof.html',import.meta.url),'utf8');
+const embedded=portableHtml.match(/<script id="embedded-record" type="application\/json">([^]*?)<\/script>/);
+assert(embedded);assert.deepEqual(JSON.parse(embedded[1]),publishedRecord);checks+=2;
+const publicCsv=JSON.parse(fs.readFileSync(new URL('./demo.json',import.meta.url))).experiments.find(e=>e.id==='__main__-1');
+assert.equal(await hashText(publicCsv.artifacts.before.text),publicCsv.artifacts.before.sha256);checks++;
+assert.deepEqual(JSON.parse(publicCsv.artifacts.before.text).exception,publicCsv.changes.find(c=>c.path==='/exception').before);checks++;
+assert.equal(receiptAssessment(publicCsv,{before:'match',after:'match'}).accepted,true);checks++;
 console.log(`${checks} failure viewer controls passed, including exact integer/float distinction, negative zero, unsafe integer tokens and actual exit-goal gating.`);

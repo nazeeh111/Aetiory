@@ -4,6 +4,9 @@ The viewer reads `demo.json` beside index.html or an imported UTF-8 JSON file.
 It executes no Python, source, HTML, candidate search or native fork. No account,
 telemetry, external fonts or browser compute service is needed. The native CLI
 owns execution and must generate this record from actual retained artifacts.
+The bundled public CSV example replaces local checkout paths in exception frames
+with repository-relative paths. Its artifact hash checks the published bytes;
+the recorded execution guards describe the original run before this redaction.
 
 The envelope is `{ "schema": "experiment-view/1", "experiments": [ ... ] }`.
 Each experiment has the following required fields:

@@ -13,7 +13,7 @@
         "artifact": "outcome.json",
         "engine": {
           "bytes": 70197,
-          "path": "/Users/nazeeh/Documents/Codex/2026-10-11/build-exceptional-software-earn-real-adoption-2/work/aetiory/aetiory/engine.py",
+          "path": "aetiory/engine.py",
           "sha256": "b6e4b3f68ca77df64310c9daf32956aa382893de169c0a5f35eb7930a8bea998"
         },
         "execution": {
@@ -36,7 +36,7 @@
         "modules": {
           "__main__": {
             "bytes": 420,
-            "path": "/Users/nazeeh/Documents/Codex/2026-10-11/build-exceptional-software-earn-real-adoption-2/work/aetiory/examples/scientific_cli.py",
+            "path": "examples/scientific_cli.py",
             "sha256": "9ee36f6319cfc6569c7942784bb9da8fc0e9108fb9188dc54328a04e5a4c772e"
           },
           "argparse": {
@@ -48,7 +48,7 @@
         "schema": "causal-engine/1",
         "script": {
           "bytes": 420,
-          "path": "/Users/nazeeh/Documents/Codex/2026-10-11/build-exceptional-software-earn-real-adoption-2/work/aetiory/examples/scientific_cli.py",
+          "path": "examples/scientific_cli.py",
           "sha256": "9ee36f6319cfc6569c7942784bb9da8fc0e9108fb9188dc54328a04e5a4c772e"
         }
       },
@@ -88,13 +88,13 @@
       "case": "batches-release",
       "manifest": {
         "arguments": [
-          "/Users/nazeeh/Documents/Codex/2026-10-11/build-exceptional-software-earn-real-adoption-2/work/aetiory/examples/inputs/records.csv",
+          "examples/inputs/records.csv",
           "128"
         ],
         "artifact": "outcome.json",
         "engine": {
           "bytes": 70197,
-          "path": "/Users/nazeeh/Documents/Codex/2026-10-11/build-exceptional-software-earn-real-adoption-2/work/aetiory/aetiory/engine.py",
+          "path": "aetiory/engine.py",
           "sha256": "b6e4b3f68ca77df64310c9daf32956aa382893de169c0a5f35eb7930a8bea998"
         },
         "execution": {
@@ -105,7 +105,7 @@
         "inputs": [
           {
             "bytes": 68,
-            "path": "/Users/nazeeh/Documents/Codex/2026-10-11/build-exceptional-software-earn-real-adoption-2/work/aetiory/examples/inputs/records.csv",
+            "path": "examples/inputs/records.csv",
             "sha256": "e26378574b44c4b9febdbedd6c59e02441f9044049fd17e96b6ef0323e3e00ad"
           }
         ],
@@ -123,14 +123,14 @@
         "modules": {
           "__main__": {
             "bytes": 829,
-            "path": "/Users/nazeeh/Documents/Codex/2026-10-11/build-exceptional-software-earn-real-adoption-2/work/aetiory/examples/partition_records.py",
+            "path": "examples/partition_records.py",
             "sha256": "2b02ffb27229850f712316dd943cbf6a5bddf051b03637099c251e510d1d01f3"
           }
         },
         "schema": "causal-engine/1",
         "script": {
           "bytes": 829,
-          "path": "/Users/nazeeh/Documents/Codex/2026-10-11/build-exceptional-software-earn-real-adoption-2/work/aetiory/examples/partition_records.py",
+          "path": "examples/partition_records.py",
           "sha256": "2b02ffb27229850f712316dd943cbf6a5bddf051b03637099c251e510d1d01f3"
         }
       },
@@ -198,5 +198,6 @@
       "fresh_undo_equal": true,
       "children_reaped": true
     }
-  ]
+  ],
+  "publication_redaction": "Eight absolute checkout paths were replaced with repository-relative paths for this public copy. Source and interpreter byte hashes, trial counts and control outcomes remain recorded, but these are not byte-identical original execution manifests."
 }

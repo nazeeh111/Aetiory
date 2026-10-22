@@ -68,8 +68,12 @@ Direct standalone file opening could not be tested in the controlled browser: it
 # Evidence for0.2.0
 
 The new recorded failure cases use engineSHA256 `b6e4b3f68ca77df64310c9daf32956aa382893de169c0a5f35eb7930a8bea998`.
-[Machine-readable case identities](failure-evidence.json) retain actual sources,
-entry/interpreter identities, return events, trial counts and control outcomes.
+[Machine-readable case identities](failure-evidence.json) retain source and
+interpreter byte hashes, return events, trial counts and control outcomes.
+The public copy replaces absolute checkout paths with repository-relative paths;
+it is not a byte-identical execution manifest. The public viewer similarly
+redacts the CSV exception's frame paths and identifies both its published
+artifact hash and the original recorded artifact hash.
 
 - Actual installed CPython3.13 argparse: exit2→exit0 with exact float param
   -3e12,23 eligible candidates and17 native paired trials. Known upstream

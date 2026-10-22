@@ -26,6 +26,11 @@ The CLI executes trusted local Python. The studio only inspects records, with
 original/alternate output, selected return, observed callers and guard receipts.
 No model API or runtime dependencies.
 
+The public CSV record replaces local checkout paths in exception frames with
+repository-relative paths. Its displayed artifact hash identifies that published
+copy; the recorded execution and replay guards were checked against the original
+bytes before this path redaction.
+
 ## Start locally
 
 Python 3.11+ on Linux or macOS. Use trusted, synchronous Python programs with
