@@ -13,9 +13,9 @@ experiment, and runs an unchanged control. Source files stay unchanged.
 
 ![Installed CSV diagnosis: original ValueError beside exit 0 and nine recovered records](docs/images/diagnosis.png)
 
-Nine records,128 workers: the owned example returns a batch capacity of0 and
-raises `ValueError`. Replacing that return with1 reaches exit0 and preserves all
-nine records and their total of3370. This is a diagnostic experiment, not a patch.
+Nine records, 128 workers: the owned example returns a batch capacity of 0 and
+raises `ValueError`. Replacing that return with 1 reaches exit 0 and preserves all
+nine records and their total of 3370. This is a diagnostic experiment, not a patch.
 
 [Inspect the recorded studio](https://nazeeh111.github.io/Aetiory/) ·
 [Run this complete case](#try-the-complete-csv-investigation) ·
@@ -51,7 +51,7 @@ or changes your application settings automatically.
 
 ## Try the complete CSV investigation
 
-From a source checkout after installing Aetiory, use Python3.12+ for this example
+From a source checkout after installing Aetiory, use Python 3.12+ for this example
 (it uses `itertools.batched`). Every output directory must be new.
 
 ```sh
@@ -66,11 +66,11 @@ aetiory diagnose --script examples/partition_records.py \
 Open `experiments/batching/viewer/index.html` offline. Use **Result → Return →
 Checks** to follow the same investigation:
 
-| Inspect | Actual installed Python3.14 run |
+| Inspect | Actual installed Python 3.14 run |
 |---|---|
-| Original | `ValueError: n must be at least one`, exit1 |
-| Selected return | `planned_capacity`, line10: `0 → 1` |
-| Alternate | Exit0,9 records,9 batches,total3370 |
+| Original | `ValueError: n must be at least one`, exit 1 |
+| Selected return | `planned_capacity`, line 10: `0 → 1` |
+| Alternate | Exit 0, 9 records, 9 batches, total 3370 |
 | Replay and control | Fresh paired replay reproduced both outcomes; fresh unchanged run matched the original bytes |
 
 ![Actual selected return 0 to 1 beside the unchanged Python source](docs/images/return.png)
@@ -88,7 +88,7 @@ Run a trusted standalone source file unchanged:
 aetiory diagnose --script your_program.py --out experiments/failure
 ```
 
-Exit0 alone does not establish that the program did the right thing. For JSON
+Exit 0 alone does not establish that the program did the right thing. For JSON
 stdout, require the value you actually need:
 
 ```sh
@@ -101,9 +101,9 @@ modules with `--module name=/absolute/source.py`, declare file inputs with
 `--input`, and pass each target argument with `--arg=VALUE`.
 
 `diagnosis.json` distinguishes `diagnosed`, `unresolved` and `refused`; CLI exit
-codes are0,2 and3 respectively. A target exception is a captured outcome; an
+codes are 0, 2 and 3 respectively. A target exception is a captured outcome; an
 engine refusal, unsupported stream, quota exhaustion or timeout is not.
-Stdout and stderr are each limited to128KiB of strict UTF-8, including output
+Stdout and stderr are each limited to 128 KiB of strict UTF-8, including output
 emitted before the split. Retained trials, source context, observed callers,
 fresh replay and unchanged control stay together in the portable viewer.
 
@@ -159,11 +159,11 @@ minutes. An unresolved search is an honest result.
 
 | Program | Original outcome | Verified alternate |
 |---|---|---|
-| Scientific CLI through unchanged CPython3.13 `argparse` | Negative scientific notation is interpreted as an option; exit2 | The upstream option classifier returns `None`; exit0 and actual parsed `param=-3e12` |
-| Owned CSV partitioner,9 records over128 workers | Floor allocation returns0; `itertools.batched` raises `ValueError` | The entry's capacity return becomes1; all9 records and the full total remain verified |
+| Scientific CLI through unchanged CPython 3.13 `argparse` | Negative scientific notation is interpreted as an option; exit 2 | The upstream option classifier returns `None`; exit 0 and actual parsed `param=-3e12` |
+| Owned CSV partitioner, 9 records over 128 workers | Floor allocation returns 0; `itertools.batched` raises `ValueError` | The entry's capacity return becomes 1; all 9 records and the full total remain verified |
 
 The first reproduces [CPython#105712](https://github.com/python/cpython/issues/105712),
-not a newly discovered defect. Python3.14 already accepts this input, and passing
+not a newly discovered defect. Python 3.14 already accepts this input, and passing
 `-p=-3e12` is a simpler workaround. The second is an owned workload with a
 retained defect, not a reported upstream bug or production customer. Both require
 actual output, preserve the original failure and perform fresh replay/undo.
