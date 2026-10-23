@@ -22,9 +22,14 @@ nine records and their total of 3370. This is a diagnostic experiment, not a pat
 [Download](https://github.com/nazeeh111/Aetiory/releases) ·
 [Agent tools](docs/AGENTS.md)
 
-The CLI executes trusted local Python. The studio only inspects records, with
-original/alternate output, selected return, observed callers and guard receipts.
-No model API or runtime dependencies.
+**In the recorded studio:** choose the nine-record CSV investigation. Compare
+**Result** (exception versus exit 0), inspect **Return** (`0 → 1`), then read
+**Checks** for paired replay and the unchanged control. You can inspect and
+save the retained evidence without installing Python.
+
+**For a fresh experiment:** run the local CLI below. The browser reads records;
+it cannot execute Python or establish a fresh replay. No model API or runtime
+dependencies.
 
 The public CSV record replaces local checkout paths in exception frames with
 repository-relative paths. Its displayed artifact hash identifies that published
