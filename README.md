@@ -1,13 +1,21 @@
-# Aetiory
+<a name="aetiory"></a>
 
-**Diagnose failed Python runs by testing an earlier return.**
+# Faultsplice
+
+> **Faultsplice, distributed as Aetiory.** Install, command and import names remain `aetiory`; existing releases and recorded evidence retain their Aetiory provenance.
+
+![Faultsplice wordmark: a live path splits into original and alternate branches](docs/images/faultsplice-wordmark.svg)
+
+**One return. Two outcomes.**
+
+Diagnose a failed Python run by testing another value at one live return.
 
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-1755ad?logo=python&logoColor=white)](docs/EXECUTION.md)
 [![Linux · macOS](https://img.shields.io/badge/native_fork-Linux_%C2%B7_macOS-334155)](docs/EXECUTION.md)
 [![No runtime dependencies](https://img.shields.io/badge/runtime_dependencies-0-334155)](pyproject.toml)
 [![MIT](https://img.shields.io/badge/license-MIT-334155)](LICENSE)
 
-At a selected return, Aetiory forks the live computation. One process keeps the
+At a selected return, Faultsplice forks the live computation. One process keeps the
 original value; the other gets a replacement. It compares the result, replays the
 experiment, and runs an unchanged control. Source files stay unchanged.
 
