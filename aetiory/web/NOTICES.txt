@@ -16,12 +16,6 @@ license is included in `licenses/Manifold-Apache-2.0.txt`. The original Offset3.
 Manifold commit 761661c15bacb6c8459d682c715de84591d51774. No ownership over those
 fixtures is claimed.
 
-Tracing, dynamic program slicing and process fork have long-standing precedents.
-noWorkflow, Whyline and mature debuggers already expose useful execution evidence.
-Aetiory's contribution is the particular artifact-selection, automatic paired
-return trial, outcome-first failure investigation, guarded replay and portable evidence workflow. No first-in-history
-or universal superiority claim is made.
-
 
 MIT License
 
