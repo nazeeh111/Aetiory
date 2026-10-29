@@ -216,7 +216,7 @@ class ExportBoundaryTests(unittest.TestCase):
         self.assertFalse(parsed.stylesheets)
         self.assertEqual(json.loads("".join(parsed.embedded)), payload)
         self.assertNotIn('<template id="inert-marker">', text)
-        notices = (ROOT / "NOTICES.txt").read_text()
+        notices = (ROOT / "LICENSE.txt").read_text()
         self.assertIn(html.escape(notices), text)
         for license_name in ("MIT License", "PYTHON SOFTWARE FOUNDATION LICENSE VERSION 2", "Apache License"):
             self.assertIn(license_name, notices)

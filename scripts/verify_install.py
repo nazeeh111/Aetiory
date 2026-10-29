@@ -13,7 +13,7 @@ assert __version__ == '0.2.2'
 source_root = Path(__file__).resolve().parents[1]
 assert not Path(engine.__file__).resolve().is_relative_to(source_root)
 resources = importlib.resources.files('aetiory.web')
-for name in ['index.html','style.css','app.js','demo.json','NOTICES.txt','API.md']:
+for name in ['index.html','style.css','app.js','demo.json','LICENSE.txt','API.md']:
     assert resources.joinpath(name).is_file(), name
 payload = json.loads(resources.joinpath('demo.json').read_text())
 assert len(payload['experiments']) == 4

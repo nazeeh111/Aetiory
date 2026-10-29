@@ -26,4 +26,4 @@ aetiory = "aetiory.__main__:main"
 include = ["aetiory*"]
 
 [tool.setuptools.package-data]
-"aetiory.web" = ["index.html", "app.js", "style.css", "demo.json", "API.md", "NOTICES.txt"]
+"aetiory.web" = ["index.html", "app.js", "style.css", "demo.json", "API.md", "LICENSE.txt"]

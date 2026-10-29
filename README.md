@@ -238,4 +238,4 @@ observed versus expected behavior, and a retained refusal or trial receipt.
 
 MIT for the original implementation. CPython source excerpts retain the PSF
 license; native sample provenance retains its Manifold Apache-2.0 notice.
-[Third-party notices](THIRD_PARTY_NOTICES.md) explain each included item.
+[License and included-source terms](LICENSE) explain each included item.

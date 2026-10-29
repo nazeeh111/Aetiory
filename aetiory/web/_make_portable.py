@@ -24,8 +24,8 @@ def portable_document(payload):
     html=(ROOT/'index.html').read_text()
     html=html.replace('<link rel="stylesheet" href="style.css">','<style>'+css+'</style>')
     html=html.replace('<script type="module" src="app.js"></script>','<script id="embedded-record" type="application/json">'+data+'</script><script type="module">'+js+'</script>')
-    notices=html_module.escape((ROOT/'NOTICES.txt').read_text())
-    html=html.replace('<a href="NOTICES.txt">Licenses</a>', '<a href="#included-licenses">Licenses</a>')
+    notices=html_module.escape((ROOT/'LICENSE.txt').read_text())
+    html=html.replace('<a href="LICENSE.txt">Licenses</a>', '<a href="#included-licenses">Licenses</a>')
     html=html.replace('</footer>', '<details id="included-licenses"><summary>Included licenses and provenance</summary><pre>'+notices+'</pre></details></footer>')
     return html
 
