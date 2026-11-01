@@ -10,11 +10,6 @@
 
 Diagnose a failed Python run by testing another value at one live return.
 
-[![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-1755ad?logo=python&logoColor=white)](docs/EXECUTION.md)
-[![Linux · macOS](https://img.shields.io/badge/native_fork-Linux_%C2%B7_macOS-334155)](docs/EXECUTION.md)
-[![No runtime dependencies](https://img.shields.io/badge/runtime_dependencies-0-334155)](pyproject.toml)
-[![MIT](https://img.shields.io/badge/license-MIT-334155)](LICENSE)
-
 At a selected return, Faultsplice forks the live computation. One process keeps the
 original value; the other gets a replacement. It compares the result, replays the
 experiment, and runs an unchanged control. Source files stay unchanged.
@@ -30,14 +25,7 @@ nine records and their total of 3370. This is a diagnostic experiment, not a pat
 [Download](https://github.com/nazeeh111/Aetiory/releases) ·
 [Agent tools](docs/AGENTS.md)
 
-**In the recorded studio:** choose the nine-record CSV investigation. Compare
-**Result** (exception versus exit 0), inspect **Return** (`0 → 1`), then read
-**Checks** for paired replay and the unchanged control. You can inspect and
-save the retained evidence without installing Python.
-
-**For a fresh experiment:** run the local CLI below. The browser reads records;
-it cannot execute Python or establish a fresh replay. No model API or runtime
-dependencies.
+In the recorded studio, choose the nine-record CSV case and follow **Result → Return → Checks**. The browser inspects retained evidence; a fresh Python experiment uses the local CLI below.
 
 The public CSV record replaces local checkout paths in exception frames with
 repository-relative paths. Its displayed artifact hash identifies that published
@@ -45,6 +33,11 @@ copy; the recorded execution and replay guards were checked against the original
 bytes before this path redaction.
 
 ## Start locally
+
+[![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-1755ad?logo=python&logoColor=white)](docs/EXECUTION.md)
+[![Linux · macOS](https://img.shields.io/badge/native_fork-Linux_%C2%B7_macOS-334155)](docs/EXECUTION.md)
+[![No runtime dependencies](https://img.shields.io/badge/runtime_dependencies-0-334155)](pyproject.toml)
+[![MIT](https://img.shields.io/badge/license-MIT-334155)](LICENSE)
 
 Python 3.11+ on Linux or macOS. Use trusted, synchronous Python programs with
 fork-compatible state. A native process fork copies live computational memory;
