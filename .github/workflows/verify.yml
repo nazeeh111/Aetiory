@@ -24,8 +24,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+      - name: Install test dependencies
+        run: |
+          python -m pip install setuptools==84.0.0
+          python -m pip install --no-build-isolation '.[test]'
       - name: Native engine and agent contracts
-        run: python -m unittest discover -s tests -v
+        run: python -m pytest -q tests
       - name: Viewer records and controller
         run: |
           node aetiory/web/checks.mjs
@@ -34,7 +38,6 @@ jobs:
           node aetiory/web/portable-check.mjs aetiory/web/recorded-proof.html
       - name: Build dependency-free wheel
         run: |
-          python -m pip install setuptools==84.0.0
           python -m pip wheel --no-deps --no-build-isolation . --wheel-dir dist
       - name: Installed wheel outside checkout
         run: |

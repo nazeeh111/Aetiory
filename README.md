@@ -220,9 +220,12 @@ HTML ids or parsed pointers for semantic selection.
 ## Inspect and contribute
 
 ```sh
-python -m unittest discover -s tests -v
+python -m pip install '.[test]'
+python -m pytest -q tests
 node aetiory/web/checks.mjs
 node aetiory/web/controller-checks.mjs
+node aetiory/web/failure-checks.mjs
+node aetiory/web/portable-check.mjs aetiory/web/recorded-proof.html
 ```
 
 See [evidence](docs/EVIDENCE.md), [the execution contract](docs/EXECUTION.md),

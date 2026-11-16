@@ -15,6 +15,9 @@ dependencies = []
 keywords = ["debugging", "counterfactual", "python", "execution", "mcp", "replay"]
 classifiers = ["Development Status :: 3 - Alpha", "Programming Language :: Python :: 3", "Operating System :: POSIX"]
 
+[project.optional-dependencies]
+test = ["pytest==9.1.1"]
+
 [project.urls]
 Source = "https://github.com/nazeeh111/Aetiory"
 Studio = "https://nazeeh111.github.io/Aetiory/"
