@@ -159,7 +159,7 @@ class Server:
 
     def summary(self, report):
         keys = ("schema", "kind", "status", "baseline_byte_parity", "candidate_count",
-                "trial_count", "seconds", "undo_byte_identical", "limitations")
+                "trial_count", "seconds", "undo_byte_identical", "termination_reason", "coverage", "next_action", "stop_trigger", "limitations")
         return {k: report[k] for k in keys if k in report}
 
     def call(self, name, arguments):
@@ -173,7 +173,7 @@ class Server:
             result = self.summary(report)
             if report["kind"] == "search":
                 result.update(selector=report["selector"], selected_baseline=report["selected_baseline"],
-                    trials=[{k: t[k] for k in ("event_id", "selected_changed", "artifact_changed", "paired_parent_baseline_equal", "selector_error") if k in t} for t in report["trials"]])
+                    trials=[{k: t[k] for k in ("event_id", "classification", "selected_changed", "artifact_changed", "paired_parent_baseline_equal", "selector_error") if k in t} for t in report["trials"]])
             elif report["kind"] == "replay":
                 result["counterfactual"] = report["counterfactual"]
             elif report["kind"] == "intervention":
@@ -376,7 +376,7 @@ def serve(server, reader, writer):
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(prog=f"{argparse.ArgumentParser().prog} mcp", description=__doc__)
     parser.add_argument("--workspace", required=True)
     parser.add_argument("--state", required=True)
     args = parser.parse_args(argv)

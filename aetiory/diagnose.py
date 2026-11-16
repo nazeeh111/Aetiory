@@ -1,5 +1,6 @@
 """Run a complete trusted failing-script investigation with retained evidence."""
 import argparse
+import sys
 import json
 from pathlib import Path
 from types import SimpleNamespace
@@ -34,7 +35,8 @@ def diagnose(args):
             stdout_pointer=args.stdout_pointer, stdout_equals=args.stdout_equals,
             pointer=None, html_id=None, html_next_sibling=0, start=None, end=None,
             encoding="json", max_trials=args.max_trials, seconds=args.seconds, timeout=args.timeout))
-        result.update(search_file=str(root / "searched/search.json"), trial_count=search["trial_count"])
+        result.update(search_file=str(root / "searched/search.json"), trial_count=search["trial_count"],
+                      termination_reason=search["termination_reason"], coverage=search["coverage"], next_action=search["next_action"], stop_trigger=search["stop_trigger"])
         if search["status"] != "influence_confirmed":
             result.update(status="unresolved", reason="No guarded return trial reached the requested exit/stdout outcome")
             return result
@@ -48,7 +50,7 @@ def diagnose(args):
         from .export import experiment, export_record
         export_record({"schema": "experiment-view/1", "experiments": [experiment(
             result["observation_file"], result["search_file"], args.title, result["replay_file"])]}, root / "viewer")
-        result.update(status="diagnosed", viewer_file=str(root / "viewer/index.html"),
+        result.update(status="diagnosed", next_action="Inspect the retained viewer and evidence; the source is unchanged.", viewer_file=str(root / "viewer/index.html"),
             experiment_file=str(root / "viewer/experiment.json"),
             meaning="A temporary return reached the requested outcome; this does not repair the source")
         return result
@@ -60,7 +62,7 @@ def diagnose(args):
 
 
 def parser():
-    p = argparse.ArgumentParser(description="Find an earlier return that lets a trusted failing script finish successfully. Does not edit source.")
+    p = argparse.ArgumentParser(prog=f"{argparse.ArgumentParser().prog} diagnose", description="Find an earlier return that lets a trusted failing script finish successfully. Does not edit source.")
     p.add_argument("--script", required=True)
     p.add_argument("--module", action="append", default=[])
     p.add_argument("--input", action="append", default=[])

@@ -2,7 +2,7 @@
 
 # Faultsplice
 
-> **Faultsplice, distributed as Aetiory.** Install, command and import names remain `aetiory`; existing releases and recorded evidence retain their Aetiory provenance.
+> **Faultsplice, distributed as Aetiory.** The distribution and import remain `aetiory`. New installs provide both `faultsplice` and `aetiory` commands; existing releases and recorded evidence retain their Aetiory provenance.
 
 ![Faultsplice wordmark: a live path splits into original and alternate branches](docs/images/faultsplice-wordmark.svg)
 
@@ -46,13 +46,14 @@ it does not roll back files, network activity or other external effects.
 ```sh
 python3 -m venv .venv
 . .venv/bin/activate
-python -m pip install --no-deps ./aetiory-0.2.2-py3-none-any.whl
-aetiory --help
+python -m pip install --no-deps .
+faultsplice --help  # `aetiory` is an equivalent command
 ```
 
-Download the wheel from Releases first, or install a source checkout with
-`python -m pip install --no-deps .`. The source build needs setuptools;
-the wheel has no runtime dependencies. Nothing registers an agent integration
+Run these commands from a source checkout. This unreleased source version
+provides both commands. The historical 0.2.2 wheel on Releases provides only
+`aetiory`; use `aetiory --help` with that wheel. The source build needs
+setuptools; the wheel has no runtime dependencies. Nothing registers an agent integration
 or changes your application settings automatically.
 
 ## Try the complete CSV investigation
@@ -232,3 +233,20 @@ observed versus expected behavior, and a retained refusal or trial receipt.
 MIT for the original implementation. CPython source excerpts retain the PSF
 license; native sample provenance retains its Manifold Apache-2.0 notice.
 [License and included-source terms](LICENSE) explain each included item.
+
+### Unresolved investigations
+
+Search, diagnose, and MCP summaries expose `termination_reason`, `coverage`, and
+`next_action`. Coverage counts candidate replacements from the recorded trace;
+it is not a count of every possible cause. Completed trials require a successful
+paired parent and reaped child, baseline parity, and a readable selected result.
+Refused, timed-out, failed, mismatched and selector-error trials remain separate.
+A retry with a larger budget starts the search again rather than continuing it.
+
+For an unresolved search, `aetiory export --observation OBSERVATION.json --search
+SEARCH.json --out DIRECTORY` writes `investigation.json` with the recorded
+observation, search and partial trial receipts. The paths in the record refer to
+the original local run; the export does not embed those run directories or
+establish a repair. Confirmed results still use the existing HTML export and
+require guarded replay for the final diagnostic conclusion. The source audit hook
+is a product guard, not an operating-system sandbox.

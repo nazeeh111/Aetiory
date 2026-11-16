@@ -25,23 +25,38 @@ def main():
         from .mcp import main as mcp
         return mcp(sys.argv[2:])
     if sys.argv[1:2] == ["export"]:
-        from .export import experiment, export_record
-        parser = argparse.ArgumentParser(description="Export retained confirmed evidence to one portable HTML viewer and JSON")
+        from .export import experiment, export_record, export_partial, read_report
+        parser = argparse.ArgumentParser(prog=f"{argparse.ArgumentParser().prog} export", description="Export confirmed evidence to HTML and JSON, or unresolved evidence to investigation.json.")
         parser.add_argument("--observation", required=True)
         parser.add_argument("--search", required=True)
         parser.add_argument("--out", required=True)
         parser.add_argument("--replay", help="Optional retained fresh intervention replay receipt")
         parser.add_argument("--title", default="A paired return experiment")
         args = parser.parse_args(sys.argv[2:])
-        result = export_record({"schema": "experiment-view/1", "experiments": [experiment(args.observation, args.search, args.title, args.replay)]}, args.out)
+        report = read_report(args.search)
+        if report.get("status") == "unresolved":
+            if args.replay is not None:
+                raise engine.Refusal("Unresolved search cannot include a confirmed replay")
+            result = export_partial(args.observation, args.search, args.title, args.out)
+        else:
+            result = export_record({"schema": "experiment-view/1", "experiments": [experiment(args.observation, args.search, args.title, args.replay)]}, args.out)
         print(json.dumps(result))
         return 0
+    if sys.argv[1:2] not in (["observe"], ["search"], ["replay"], ["_worker"]):
+        parser = argparse.ArgumentParser(description="Test a different return in a trusted Python run.")
+        parser.add_argument("command", choices=("diagnose", "observe", "search", "replay", "export", "mcp"))
+        parser.parse_args(sys.argv[1:2])
     return engine.main()
 
 
-if __name__ == "__main__":
+def cli():
+    """Apply the same refusal contract to module and installed entry points."""
     try:
-        raise SystemExit(main())
+        return main()
     except (engine.Refusal, OSError, ValueError, KeyError, TypeError, RecursionError) as error:
         print(json.dumps({"status": "refused", "error": type(error).__name__, "message": str(error)[:1000]}))
-        raise SystemExit(3)
+        return 3
+
+
+if __name__ == "__main__":
+    raise SystemExit(cli())

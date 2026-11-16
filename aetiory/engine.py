@@ -1116,7 +1116,8 @@ def candidate_priority(event, selected, parent, text_mode):
 def search(args):
     validate_api(args, search_mode=True)
     observation_path = Path(args.observation).resolve(strict=True)
-    observation = json.loads(bounded_bytes(observation_path, 16 * 1024 * 1024))
+    observation_bytes = bounded_bytes(observation_path, 16 * 1024 * 1024)
+    observation = json.loads(observation_bytes)
     if observation.get("schema") != SCHEMA or not observation.get("baseline_byte_parity"):
         raise Refusal("A fresh plain/observed byte-identical baseline is required")
     m = observation["manifest"]
@@ -1147,33 +1148,63 @@ def search(args):
     if selector["kind"] == "outcome" and target:
         raise Refusal("Target baseline already satisfies the selected outcome goal")
     root = create_dir(args.out)
+    outcome_path = Path(__file__).with_name("outcome.py")
+    outcome_code_hash = sha(bounded_bytes(outcome_path, 1024 * 1024))
+    from .outcome import outcome, trial_classification
+    def permission_receipt(value):
+        if not isinstance(value, dict):
+            return False
+        error = value.get("error")
+        return (isinstance(error, dict) and error.get("type") == "PermissionError") or permission_receipt(value.get("child"))
+
     candidates = []
-    for event in load_events(Path(observation["observed"]["directory"]) / "trace.jsonl.gz"):
-        if not event["portable"]:
-            continue
-        replacements = replacement_values(event["packed"], "execution" in m)
-        if not replacements:
-            continue
-        priority = (-event["id"],) if selector["kind"] == "outcome" else candidate_priority(event, target, parent, selector["kind"] in ("text", "html"))
-        if priority is not None:
-            candidates.append((priority, event, replacements))
+    scan_error = None
+    native_denial = False
+    try:
+        for event in load_events(Path(observation["observed"]["directory"]) / "trace.jsonl.gz"):
+            if not event["portable"]:
+                continue
+            replacements = replacement_values(event["packed"], "execution" in m)
+            if not replacements:
+                continue
+            priority = (-event["id"],) if selector["kind"] == "outcome" else candidate_priority(event, target, parent, selector["kind"] in ("text", "html"))
+            if priority is not None:
+                candidates.append((priority, event, replacements))
+    except (Refusal, OSError, EOFError, ValueError, KeyError, TypeError, RecursionError) as error:
+        scan_error = {"type": type(error).__name__, "message": str(error)[:1000]}
+        native_denial = isinstance(error, PermissionError)
     candidates.sort(key=lambda x: x[0])
+    opportunities = sum(len(item[2]) for item in candidates)
     start = time.monotonic()
     trials, discovered = [], None
-    for _, event, replacements in candidates:
+    stop_trigger = ("permission_denied" if native_denial else "candidate_scan_refused") if scan_error else None
+    for _, event, replacements in candidates if not scan_error else ():
         for replacement in replacements:
-            if len(trials) >= args.max_trials or time.monotonic() - start >= args.seconds:
+            if len(trials) >= args.max_trials:
+                stop_trigger = "trial_limit"
+                break
+            if time.monotonic() - start >= args.seconds:
+                stop_trigger = "time_limit"
                 break
             guard = {k: event[k] for k in ("id", "module", "site", "function", "value_hash", "prefix_before", "ancestry_hash")}
             plan = {"schema": SCHEMA, "kind": "intervention", "backend": "paired-os-fork", "prefix_scope": "portable-values-and-opaque-markers", "manifest": m, "manifest_hash": sha(encoded(m)), "event": guard, "replacement": replacement, "selector": selector, "baseline_artifact": observation["observed"]["artifact"], "trace_evidence": {"packed": event["packed"], "ancestry": event["ancestry"], "prefix_scope": event["prefix_scope"], "opaque_prior_count": event["opaque_prior_count"]}}
-            result = run_once(m, root, "trial-" + str(len(trials) + 1).zfill(4), "paired", min(args.timeout, max(0.01, args.seconds - (time.monotonic() - start))), patch=plan)
-            trial = {"event_id": event["id"], "replacement": replacement, "run": result, "selected_changed": False, "artifact_changed": False}
+            trial = {"event_id": event["id"], "replacement": replacement, "selected_changed": False, "artifact_changed": False}
+            try:
+                result = run_once(m, root, "trial-" + str(len(trials) + 1).zfill(4), "paired", min(args.timeout, max(0.01, args.seconds - (time.monotonic() - start))), patch=plan)
+            except (Refusal, OSError, ValueError, KeyError, TypeError, RecursionError) as error:
+                result = {"ok": False, "error": {"type": type(error).__name__, "message": str(error)[:1000]}, "directory": str(root / ("trial-" + str(len(trials) + 1).zfill(4)))}
+                stop_trigger = "trial_error"
+                native_denial = isinstance(error, PermissionError)
+            if permission_receipt(result):
+                native_denial = True
+                stop_trigger = "permission_denied"
+            trial["run"] = result
             trial["paired_parent_baseline_equal"] = bool(result.get("artifact") == observation["plain"]["artifact"])
-            if result["ok"] and trial["paired_parent_baseline_equal"] and result.get("child", {}).get("ok"):
-                child = result["child"]
-                after = bounded_bytes(Path(child["directory"]) / m["artifact"], MAX_ARTIFACT_BYTES)
-                trial["artifact_changed"] = after != original
+            if not native_denial and result.get("ok") is True and trial["paired_parent_baseline_equal"] and isinstance(result.get("child"), dict) and result["child"].get("ok") is True and result.get("child_reaped") is True:
                 try:
+                    child = result["child"]
+                    after = bounded_bytes(Path(child["directory"]) / m["artifact"], MAX_ARTIFACT_BYTES)
+                    trial["artifact_changed"] = after != original
                     new_target, _ = selected_value(after, selector)
                     trial["selected_changed"] = type(new_target) is not type(target) or new_target != target
                     if selector["kind"] == "html":
@@ -1185,20 +1216,62 @@ def search(args):
                     else:
                         before_text, after_text = original.decode(), after.decode()
                         trial["collateral"] = {"original_characters": len(before_text), "counterfactual_characters": len(after_text), "whole_artifact_changed": before_text != after_text, "selected_span_before": preview(target), "selected_span_after": preview(new_target), "note": "Fixed character offsets can shift when earlier output length changes; inspect the captured complete artifacts."}
-                except (Refusal, UnicodeError) as e:
-                    trial["selector_error"] = str(e)
+                except (Refusal, OSError, ValueError, KeyError, TypeError, UnicodeError, RecursionError) as error:
+                    trial["selector_error"] = str(error)[:1000]
+                    trial["selected_changed"] = False
+                    trial["selector_error_type"] = type(error).__name__
+                    if isinstance(error, PermissionError):
+                        native_denial = True
+                        stop_trigger = "permission_denied"
+            trial["classification"] = trial_classification(trial)
             trials.append(trial)
-            if trial["selected_changed"]:
+            if trial["classification"] == "changed":
                 plan["observed_effect"] = {"counterfactual_artifact": result["child"]["artifact"], "paired_parent_artifact": result["artifact"], "selected_changed": True, "collateral": trial.get("collateral")}
                 plan["plan_hash"] = sha(encoded(plan))
-                (root / "intervention.json").write_bytes(encoded(plan) + b"\n")
-                discovered = plan
+                try:
+                    (root / "intervention.json").write_bytes(encoded(plan) + b"\n")
+                    discovered = plan
+                except (OSError, ValueError, TypeError) as error:
+                    trial["plan_error"] = {"type": type(error).__name__, "message": str(error)[:1000]}
+                    native_denial = isinstance(error, PermissionError)
+                    stop_trigger = "permission_denied" if native_denial else "trial_error"
                 break
-        if discovered or len(trials) >= args.max_trials or time.monotonic() - start >= args.seconds:
+            if stop_trigger:
+                break
+        if discovered or stop_trigger:
             break
-    undo = run_once(m, root, "fresh-undo", "plain", args.timeout)
-    undo_equal = bool(undo["ok"] and undo["artifact"] == observation["plain"]["artifact"])
-    report = {"schema": SCHEMA, "kind": "search", "status": "influence_confirmed" if discovered and undo_equal else "unresolved", "selector": selector, "selected_baseline": preview(target), "candidate_count": len(candidates), "trial_count": len(trials), "seconds": time.monotonic() - start, "trials": trials, "intervention_file": str(root / "intervention.json") if discovered else None, "fresh_undo": undo, "undo_byte_identical": undo_equal, "limitations": ["Candidate priority is not inferred dataflow; only selected-output changes confirmed by guarded fresh replay establish influence on this run.", "Temporary return replacement is a counterfactual experiment, not a source-level repair.", "Recorded call ancestry and bounded argument previews are not complete causal dataflow."]}
+    search_seconds = time.monotonic() - start
+    outcome_check_error = None
+    if not native_denial:
+        try:
+            outcome_unchanged = sha(bounded_bytes(outcome_path, 1024 * 1024)) == outcome_code_hash
+        except (Refusal, OSError) as error:
+            outcome_check_error = {"type": type(error).__name__, "message": str(error)[:1000]}
+            outcome_unchanged = False
+            native_denial = isinstance(error, PermissionError)
+        if not outcome_unchanged:
+            stop_trigger = "permission_denied" if native_denial else "outcome_code_changed"
+            discovered = None
+    if native_denial:
+        undo = {"ok": False, "error": {"type": "PermissionError", "message": "Fresh undo skipped after permission denial"}, "directory": str(root / "fresh-undo")}
+    else:
+        try:
+            undo = run_once(m, root, "fresh-undo", "plain", args.timeout)
+            if permission_receipt(undo):
+                native_denial = True
+                stop_trigger = "permission_denied"
+        except (Refusal, OSError, ValueError, KeyError, TypeError, RecursionError) as error:
+            undo = {"ok": False, "error": {"type": type(error).__name__, "message": str(error)[:1000]}, "directory": str(root / "fresh-undo")}
+            if isinstance(error, PermissionError):
+                native_denial = True
+                stop_trigger = "permission_denied"
+    undo_equal = bool(not native_denial and undo.get("ok") and undo.get("artifact") == observation["plain"]["artifact"])
+    summary = outcome(trials, len(candidates), opportunities, stop_trigger, bool(discovered), undo_equal, scan_complete=scan_error is None)
+    report = {"schema": SCHEMA, "kind": "search", "status": "influence_confirmed" if discovered and undo_equal else "unresolved", "selector": selector, "selected_baseline": preview(target), "candidate_count": len(candidates), "trial_count": len(trials), "seconds": time.monotonic() - start, "search_seconds": search_seconds, "stop_trigger": stop_trigger, **summary, "observation_sha256": sha(observation_bytes), "observation_manifest_hash": observation["manifest_hash"], "outcome_code_sha256": outcome_code_hash, "trials": trials, "intervention_file": str(root / "intervention.json") if discovered else None, "fresh_undo": undo, "undo_byte_identical": undo_equal, "limitations": ["Candidate priority is not inferred dataflow; only selected-output changes confirmed by guarded fresh replay establish influence on this run.", "Temporary return replacement is a counterfactual experiment, not a source-level repair.", "Recorded call ancestry and bounded argument previews are not complete causal dataflow."]}
+    if outcome_check_error:
+        report["outcome_check_error"] = outcome_check_error
+    if scan_error:
+        report["candidate_scan_error"] = scan_error
     (root / "search.json").write_bytes(encoded(report) + b"\n")
     return report
 
@@ -1289,7 +1362,7 @@ def main(argv=None):
         raise Refusal("Invalid bounded search configuration")
     result = {"observe": observe, "search": search, "replay": replay}[args.command](args)
     summary = {k: result[k] for k in ("schema", "kind", "status")}
-    for k in ("baseline_byte_parity", "candidate_count", "trial_count", "undo_byte_identical", "intervention_file"):
+    for k in ("baseline_byte_parity", "candidate_count", "trial_count", "undo_byte_identical", "intervention_file", "termination_reason", "coverage", "next_action", "stop_trigger"):
         if k in result:
             summary[k] = result[k]
     print(json.dumps(summary))

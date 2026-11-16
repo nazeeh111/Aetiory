@@ -199,3 +199,57 @@ def export_record(payload, output):
     (root / "experiment.json").write_text(body, encoding="utf-8", newline="\n")
     (root / "index.html").write_text(html, encoding="utf-8", newline="\n")
     return {"schema": "experiment-view/1", "status": "exported", "directory": str(root), "cases": len(payload["experiments"])}
+
+
+def export_partial(observation_path, search_path, title, output):
+    """Export unresolved trial receipts as local JSON, without claiming influence."""
+    from .outcome import outcome, trial_classification
+    if not isinstance(title, str) or not 1 <= len(title) <= 256:
+        raise engine.Refusal("Choose a title of 1..256 characters")
+    observation_bytes = engine.bounded_bytes(Path(observation_path), 16 * 1024 * 1024)
+    observation = json.loads(observation_bytes)
+    search = read_report(search_path)
+    if (type(observation) is not dict or observation.get("schema") != engine.SCHEMA
+            or observation.get("kind") != "observation" or observation.get("status") != "observed"
+            or observation.get("baseline_byte_parity") is not True or search.get("kind") != "search"
+            or search.get("status") != "unresolved"):
+        raise engine.Refusal("Partial export requires a valid observation and unresolved search")
+    manifest = observation["manifest"]
+    if (engine.sha(engine.encoded(manifest)) != observation.get("manifest_hash")
+            or search.get("observation_manifest_hash") != observation.get("manifest_hash")
+            or search.get("observation_sha256") != engine.sha(observation_bytes)):
+        raise engine.Refusal("Search and observation do not describe the same retained run")
+    engine.validate_manifest(manifest)
+    engine.verify_identities(manifest)
+    if search.get("outcome_code_sha256") != engine.sha(Path(__file__).with_name("outcome.py").read_bytes()):
+        raise engine.Refusal("Outcome classifier changed since the search")
+    before = artifact(observation["plain"]["directory"], manifest["artifact"], observation["plain"]["artifact"])
+    observed = artifact(observation["observed"]["directory"], manifest["artifact"], observation["observed"]["artifact"])
+    if before != observed:
+        raise engine.Refusal("Retained observation baseline bytes do not match")
+    trials = search["trials"]
+    coverage = search["coverage"]
+    if (type(trials) is not list or search.get("trial_count") != len(trials)
+            or any(trial.get("classification") != trial_classification(trial) for trial in trials)):
+        raise engine.Refusal("Retained trial classifications do not match")
+    known = coverage.get("planned_trials") is not None
+    summary = outcome(trials, search["candidate_count"], coverage.get("planned_trials") or 0,
+                      search.get("stop_trigger"), bool(search.get("intervention_file")),
+                      search.get("undo_byte_identical") is True, scan_complete=known)
+    if summary != {"termination_reason": search.get("termination_reason"), "coverage": coverage, "next_action": search.get("next_action")}:
+        raise engine.Refusal("Retained termination reason or coverage does not match trials")
+    if search.get("undo_byte_identical") is True:
+        undo = search["fresh_undo"]
+        if undo.get("ok") is not True or artifact(undo["directory"], manifest["artifact"], undo["artifact"]) != before:
+            raise engine.Refusal("Retained fresh undo bytes do not match")
+    payload = {"schema": "investigation-summary/1", "status": "unresolved", "title": title,
+               "observation_sha256": engine.sha(observation_bytes),
+               "search_sha256": engine.sha(engine.bounded_bytes(Path(search_path), 16 * 1024 * 1024)),
+               "observation": observation, "search": search,
+               "limitations": ["This JSON retains trial receipts and paths to the original run directories; it does not embed their artifacts.",
+                               "Recorded receipts and local-byte checks are not authenticated; incomplete trials are not evidence of no influence.",
+                               "The source-level audit hook is not an OS sandbox; execute trusted code only."]}
+    root = engine.create_dir(output)
+    (root / "investigation.json").write_bytes(engine.encoded(payload) + b"\n")
+    return {"schema": payload["schema"], "status": "exported_unresolved", "directory": str(root),
+            "file": str(root / "investigation.json"), "termination_reason": search["termination_reason"], "coverage": coverage, "next_action": search["next_action"]}
