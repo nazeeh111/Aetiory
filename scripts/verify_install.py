@@ -1,6 +1,8 @@
 """Verify an installed wheel from outside its source checkout, with isolated Python."""
 import hashlib
 import importlib.resources
+from importlib.metadata import version
+import tomllib
 import json
 from pathlib import Path
 import sys
@@ -9,8 +11,9 @@ from aetiory import __version__, engine
 from aetiory.export import experiment, export_record
 from aetiory.mcp import Server
 
-assert __version__ == '0.2.2'
 source_root = Path(__file__).resolve().parents[1]
+expected_version = tomllib.loads((source_root / 'pyproject.toml').read_text())['project']['version']
+assert __version__ == expected_version == version('aetiory')
 assert not Path(engine.__file__).resolve().is_relative_to(source_root)
 resources = importlib.resources.files('aetiory.web')
 for name in ['index.html','style.css','app.js','demo.json','LICENSE.txt','API.md']:

@@ -10,6 +10,7 @@ import secrets
 import sys
 import sysconfig
 from types import SimpleNamespace
+from . import __version__
 
 PROTOCOL = "2025-11-25"
 MAX_MESSAGE = 1024 * 1024
@@ -317,7 +318,7 @@ class Server:
                 raise ProtocolError("Invalid initialize parameters", -32602)
             self.initialized = True
             return {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                    "serverInfo": {"name": "aetiory", "version": "0.2.1"},
+                    "serverInfo": {"name": "aetiory", "version": __version__},
                     "instructions": "Only execute trusted workspace Python. Fork experiments do not sandbox code or roll back external effects. Tool calls are sequential and time-bounded; mid-call MCP cancellation is not supported. Handles are session-local; retained reports remain on disk."}
         if method == "ping":
             return {}

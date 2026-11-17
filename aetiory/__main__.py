@@ -2,12 +2,16 @@
 import argparse
 import json
 import sys
-from . import engine
+from . import engine, __version__
 
 
 def main():
+    if sys.argv[1:] == ["--version"]:
+        print(__version__)
+        return 0
     if not sys.argv[1:] or sys.argv[1:] in (["--help"], ["-h"]):
         parser = argparse.ArgumentParser(description="Choose an output. Test upstream returns in paired live Python execution.")
+        parser.add_argument("--version", action="version", version=__version__)
         sub = parser.add_subparsers(dest="command")
         for name, help_text in (("diagnose", "Find a return that changes a failure into a requested successful outcome"),
                                 ("observe", "Pin sources and require plain/instrumented byte parity"),

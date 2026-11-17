@@ -1,0 +1,90 @@
+{
+  "source_revision": "946ece2fdc94f1aa0d67f2f71aa551302a7baaa6",
+  "meaning": "Closed read-only consumer bundle. Runtimepackage/interpreter external; nativeplansnotincluded/notrelocated. Fresh observation uses includedsource/input withtrustedmatchingpackage.",
+  "files": {
+    "LICENSE.txt": {
+      "bytes": 2102,
+      "sha256": "6a2ae509d905ef4f90e8c329e7aad65a11ac0737a0a54c8c2ca431c792e8fcbc"
+    },
+    "README.md": {
+      "bytes": 5407,
+      "sha256": "f8f4b9638006723189f5d9d8f18758c8a6ba46e08a3fe1bb4f46e667f26cf6d8"
+    },
+    "browser-journey.json": {
+      "bytes": 945,
+      "sha256": "f7828b0d51560cb5bb1ea984609b84e9597acfeeecf0bd86d06dcd33bb2fd0f4"
+    },
+    "capture-provenance.json": {
+      "bytes": 1271,
+      "sha256": "b73dae955b84134d28c83566d99e37f0b30226b3ec0ccc70857bb13557fd8f5c"
+    },
+    "case.json": {
+      "bytes": 2227,
+      "sha256": "c3283325ad2f6a0227270e384f894cf893f246c082315d10b13cab75804afab0"
+    },
+    "controls.json": {
+      "bytes": 941,
+      "sha256": "1485dfc6cbcbfc6b66727a0d879333165d033ff164ed77a689e03f3d6c22e8a6"
+    },
+    "figure-manifest.json": {
+      "bytes": 1512,
+      "sha256": "35d39ca563dcdfed256ec03bed533f836032215703fadb585b735744c9d93631"
+    },
+    "inputs/records.csv": {
+      "bytes": 68,
+      "sha256": "e26378574b44c4b9febdbedd6c59e02441f9044049fd17e96b6ef0323e3e00ad"
+    },
+    "paired-trials-mobile.html": {
+      "bytes": 3561,
+      "sha256": "b774e60cb08c6880d6dae543d0f244d94562378b9f86214c389bf73164c4dc50"
+    },
+    "paired-trials-mobile.png": {
+      "bytes": 78448,
+      "sha256": "888bec23b817d3461840a43a07a5577d7d8faab66e0976fffdd5a6eee665852f"
+    },
+    "paired-trials-mobile.svg": {
+      "bytes": 3259,
+      "sha256": "058f7055d1f34b934cdb7017287f7a4c2c3532c17722d3e22a0e9a972cda9654"
+    },
+    "paired-trials.html": {
+      "bytes": 3647,
+      "sha256": "090552076dc649bbf9e7d86473bdb953b954e4f017e10e94be58428fd0b0b34a"
+    },
+    "paired-trials.png": {
+      "bytes": 105441,
+      "sha256": "41dd525560f5277aa01a852fb5e59ef78a57afcdcbac6bc5acf57a1592d98b51"
+    },
+    "paired-trials.svg": {
+      "bytes": 3344,
+      "sha256": "1a3db56e21b2f1cd9fde6030e1c1cceba14da0ac3de9246f680b639d9fee2f6b"
+    },
+    "reader/experiment.json": {
+      "bytes": 6635,
+      "sha256": "f37b0f6b9cacb01f21cc08c7eb6e9c90a3fb6305bf5b7f54b68c13c1555c2e02"
+    },
+    "reader/index.html": {
+      "bytes": 78792,
+      "sha256": "a3ea43b0485c7b6828287210c2ea198be329d2681582afcd6a5e457d0cc21e5b"
+    },
+    "reader-desktop.png": {
+      "bytes": 160529,
+      "sha256": "feb92d865cf20649cc55974aa874d1cd4a27fd840ac72aedea8f378d2a0d1ef8"
+    },
+    "reader-mobile.png": {
+      "bytes": 82142,
+      "sha256": "783553523cc2a0406e00cb37caa3930351b28ec7b99a4737689432b0730a15ed"
+    },
+    "reader-refused-import.png": {
+      "bytes": 73103,
+      "sha256": "b6c96d35e74e221e8ba289de87e7990c4392bd1d8d930be5078ab79cde220596"
+    },
+    "render.py": {
+      "bytes": 5176,
+      "sha256": "ffa0f081f87b47ae1466e91387afa2895d6025ad567a8a52d235a8e760f7113a"
+    },
+    "source/partition_records.py": {
+      "bytes": 829,
+      "sha256": "2b02ffb27229850f712316dd943cbf6a5bddf051b03637099c251e510d1d01f3"
+    }
+  }
+}

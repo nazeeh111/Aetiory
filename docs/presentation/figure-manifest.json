@@ -1,0 +1,41 @@
+{
+  "source_revision": "946ece2fdc94f1aa0d67f2f71aa551302a7baaa6",
+  "type": "Source-derived paired trial trace, not an application screenshot or new universal causal claim",
+  "files": {
+    "case.json": {
+      "bytes": 2227,
+      "sha256": "c3283325ad2f6a0227270e384f894cf893f246c082315d10b13cab75804afab0"
+    },
+    "render.py": {
+      "bytes": 5176,
+      "sha256": "ffa0f081f87b47ae1466e91387afa2895d6025ad567a8a52d235a8e760f7113a"
+    },
+    "paired-trials.svg": {
+      "bytes": 3344,
+      "sha256": "1a3db56e21b2f1cd9fde6030e1c1cceba14da0ac3de9246f680b639d9fee2f6b"
+    },
+    "paired-trials-mobile.svg": {
+      "bytes": 3259,
+      "sha256": "058f7055d1f34b934cdb7017287f7a4c2c3532c17722d3e22a0e9a972cda9654"
+    },
+    "paired-trials.html": {
+      "bytes": 3647,
+      "sha256": "090552076dc649bbf9e7d86473bdb953b954e4f017e10e94be58428fd0b0b34a"
+    },
+    "paired-trials-mobile.html": {
+      "bytes": 3561,
+      "sha256": "b774e60cb08c6880d6dae543d0f244d94562378b9f86214c389bf73164c4dc50"
+    }
+  },
+  "raster_method": "Actual installed Chrome capture from matching static inlineSVGHTML. All22wide/23portraittext nodes verifiedArial/CourierNew, in bounds and zero text overlaps.",
+  "raster_files": {
+    "paired-trials.png": {
+      "bytes": 105441,
+      "sha256": "41dd525560f5277aa01a852fb5e59ef78a57afcdcbac6bc5acf57a1592d98b51"
+    },
+    "paired-trials-mobile.png": {
+      "bytes": 78448,
+      "sha256": "888bec23b817d3461840a43a07a5577d7d8faab66e0976fffdd5a6eee665852f"
+    }
+  }
+}
