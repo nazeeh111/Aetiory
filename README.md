@@ -4,33 +4,26 @@
 
 > **Faultsplice, distributed as Aetiory.** The distribution and import remain `aetiory`. New installs provide both `faultsplice` and `aetiory` commands; existing releases and recorded evidence retain their Aetiory provenance.
 
-![Faultsplice wordmark: a live path splits into original and alternate branches](docs/images/faultsplice-wordmark.svg)
+**A changed failure is not success. Check the output you actually need.**
 
-**One return. Two outcomes.**
+Faultsplice tests alternate values at a selected live Python return. A native fork preserves an unchanged parent beside the alternate child; fresh replay and an unchanged control check the result. It observes diagnostic influence on one trusted run, without editing the workload's source.
 
-Diagnose a failed Python run by testing another value at one live return.
+[Run the complete CSV case](#try-the-complete-csv-investigation) · [Download this offline reader](docs/presentation/reader.zip) · [Inspect the recorded studio](https://nazeeh111.github.io/Aetiory/) · [Agent tools](docs/AGENTS.md)
 
-At a selected return, Faultsplice forks the live computation. One process keeps the
-original value; the other gets a replacement. It compares the result, replays the
-experiment, and runs an unchanged control. Source files stay unchanged.
+<picture>
+  <source media="(max-width: 600px)" srcset="docs/presentation/paired-trials-mobile.png">
+  <img src="docs/presentation/paired-trials.png" alt="Two actual paired trials of the same zero-capacity return. Replacing 0 with None changes ValueError to TypeError but fails the goal. Replacing 0 with 1 exits successfully with 9 records, 9 batches and total 3370. Fresh replay reproduces both outcomes and an unchanged control preserves the original failure. This is diagnostic evidence, not a source repair.">
+</picture>
 
-![Installed CSV diagnosis: original ValueError beside exit 0 and nine recovered records](docs/images/diagnosis.png)
+The fresh owned case has **9 records and 128 workers**. Floor allocation returns 0. The first replacement, `None`, produces a different exception. The second, `1`, preserves all nine records and their total of 3370. The accepted goal requires the complete stdout value, not just exit 0. [Exact trial record, controls and scope](docs/presentation/README.md).
 
-Nine records, 128 workers: the owned example returns a batch capacity of 0 and
-raises `ValueError`. Replacing that return with 1 reaches exit 0 and preserves all
-nine records and their total of 3370. This is a diagnostic experiment, not a patch.
+## Carry a readable investigation
 
-[Inspect the recorded studio](https://nazeeh111.github.io/Aetiory/) ·
-[Run this complete case](#try-the-complete-csv-investigation) ·
-[Download](https://github.com/nazeeh111/Aetiory/releases) ·
-[Agent tools](docs/AGENTS.md)
+[Download reader.zip](docs/presentation/reader.zip), extract it and open **reader/index.html** offline. Follow **Result → Return → Checks**, save/reopen the record, and download the actual published outcomes. The fresh standalone page displays Faultsplice while preserving the `aetiory` package/import and compatible commands. The browser inspects retained evidence; it cannot run Python or establish fresh replay.
 
-In the recorded studio, choose the nine-record CSV case and follow **Result → Return → Checks**. The browser inspects retained evidence; a fresh Python experiment uses the local CLI below.
+The reader bundle includes its source/input, hashes and notices. Absolute task-owned frame paths are redacted for publication; the record distinguishes the published artifact hash from the original execution hash. The native run was guarded before redaction. Moving source/interpreter files requires a new observation rather than rewriting an old plan.
 
-The public CSV record replaces local checkout paths in exception frames with
-repository-relative paths. Its displayed artifact hash identifies that published
-copy; the recorded execution and replay guards were checked against the original
-bytes before this path redaction.
+[Actual reopened desktop reader](docs/presentation/reader-desktop.png) · [Actual 390px reader](docs/presentation/reader-mobile.png) · [Full reproduction and limits](docs/presentation/README.md)
 
 ## Start locally
 
@@ -51,7 +44,7 @@ faultsplice --help  # `aetiory` is an equivalent command
 ```
 
 Run these commands from a source checkout. This unreleased source version
-provides both commands. The historical 0.2.2 wheel on Releases provides only
+provides both commands. `faultsplice --version` and `aetiory --version` report 0.2.3.dev0, the same implementation version sent in MCP initialization. The historical 0.2.2 wheel on Releases provides only
 `aetiory`; use `aetiory --help` with that wheel. The source build needs
 setuptools; the wheel has no runtime dependencies. Nothing registers an agent integration
 or changes your application settings automatically.

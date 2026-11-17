@@ -1,0 +1,31 @@
+{
+  "source_revision": "946ece2fdc94f1aa0d67f2f71aa551302a7baaa6",
+  "app_change": "Only portableexportHTMLdisplayidentityalignedwithcurrentFaultsplice; package/import/aliases/storage/DOM/controllersemantics preserved",
+  "files": {
+    "reader/index.html": {
+      "bytes": 78792,
+      "sha256": "a3ea43b0485c7b6828287210c2ea198be329d2681582afcd6a5e457d0cc21e5b"
+    },
+    "reader/experiment.json": {
+      "bytes": 6635,
+      "sha256": "f37b0f6b9cacb01f21cc08c7eb6e9c90a3fb6305bf5b7f54b68c13c1555c2e02"
+    },
+    "reader-desktop.png": {
+      "bytes": 160529,
+      "sha256": "feb92d865cf20649cc55974aa874d1cd4a27fd840ac72aedea8f378d2a0d1ef8"
+    },
+    "reader-mobile.png": {
+      "bytes": 82142,
+      "sha256": "783553523cc2a0406e00cb37caa3930351b28ec7b99a4737689432b0730a15ed"
+    },
+    "reader-refused-import.png": {
+      "bytes": 73103,
+      "sha256": "b6c96d35e74e221e8ba289de87e7990c4392bd1d8d930be5078ab79cde220596"
+    }
+  },
+  "capture_states": {
+    "reader-desktop.png": "Actual fresh reopened standalone top1440x1000, Faultsplice visible",
+    "reader-mobile.png": "Actual fresh standalone accepted case390x1000, outcomes",
+    "reader-refused-import.png": "Actual390x844invalidrecord refusal, previous valid case retained and downloadable"
+  }
+}

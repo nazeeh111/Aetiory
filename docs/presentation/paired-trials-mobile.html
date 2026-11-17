@@ -1,0 +1,29 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Faultsplice return trials</title><style>body{margin:0}.diagram-container{overflow-x:auto}svg{display:block;min-width:480px}</style><div class="diagram-container"><svg xmlns="http://www.w3.org/2000/svg" width="480" height="1200" viewBox="0 0 480 1200" font-family="Arial" role="img" aria-labelledby="paired-trials-mobile-title paired-trials-mobile-desc"><title id="paired-trials-mobile-title">Faultsplice: a changed failure is not success</title><desc id="paired-trials-mobile-desc">Two actual paired return trials retain an original zero-capacity ValueError; replacing zero with None produces a TypeError, while replacing zero with one meets the exact nine-record and 3370 total goal.</desc><rect width="100%" height="100%" fill="#f4f6f8"/>
+<text x="32" y="38" font-size="13" fill="#526071" font-weight="700">FAULTSPLICE / ACTUAL RETURN TRIALS</text>
+<text x="32" y="92" font-size="30" fill="#161c26" font-weight="700">Changing the failure</text>
+<text x="32" y="130" font-size="30" fill="#161c26" font-weight="700">isn’t success.</text>
+<text x="32" y="178" font-size="17" fill="#526071" font-weight="400">9 records · 128 workers · original capacity 0</text>
+<text x="32" y="214" font-size="16" fill="#161c26" font-weight="400" font-family="Courier New">return len(rows) // workers</text>
+<text x="32" y="247" font-size="15" fill="#526071" font-weight="400">Each trial forks a fresh live computation.</text>
+<line x1="32" y1="286" x2="448" y2="286" stroke="#cbd2dc" stroke-width="1.5"/>
+<text x="32" y="310" font-size="14" fill="#526071" font-weight="700">TRIAL 1</text>
+<text x="32" y="356" font-size="34" fill="#1755ad" font-weight="700">0 → None</text>
+<text x="32" y="399" font-size="18" fill="#161c26" font-weight="400">Original: ValueError · exit 1</text>
+<text x="32" y="434" font-size="18" fill="#b32335" font-weight="400">Alternate: TypeError · exit 1</text>
+<text x="32" y="484" font-size="23" fill="#b32335" font-weight="700">Goal NOT met</text>
+<text x="32" y="518" font-size="15" fill="#526071" font-weight="400">A different exception is still a failure.</text>
+<line x1="32" y1="574" x2="448" y2="574" stroke="#cbd2dc" stroke-width="1.5"/>
+<text x="32" y="598" font-size="14" fill="#526071" font-weight="700">TRIAL 2</text>
+<text x="32" y="644" font-size="34" fill="#1755ad" font-weight="700">0 → 1</text>
+<text x="32" y="687" font-size="18" fill="#161c26" font-weight="400">Original: ValueError · exit 1</text>
+<text x="32" y="722" font-size="18" fill="#161c26" font-weight="400">Alternate: exit 0</text>
+<text x="32" y="761" font-size="18" fill="#161c26" font-weight="400">9 records · 9 batches · total 3370</text>
+<text x="32" y="809" font-size="23" fill="#1755ad" font-weight="700">Exact stdout goal MET</text>
+<line x1="32" y1="932" x2="448" y2="932" stroke="#cbd2dc" stroke-width="1.5"/>
+<text x="32" y="975" font-size="18" fill="#161c26" font-weight="700">Fresh replay reproduced both outcomes.</text>
+<text x="32" y="1008" font-size="17" fill="#161c26" font-weight="400">Fresh unchanged control kept the failure.</text>
+<text x="32" y="1041" font-size="17" fill="#161c26" font-weight="400">Native children were reaped.</text>
+<text x="32" y="1132" font-size="16" fill="#526071" font-weight="400">A diagnostic experiment, not a source patch.</text>
+<text x="32" y="1166" font-size="13" fill="#526071" font-weight="400">Owned synthetic workload · not general causal proof</text>
+</svg>
+</div></html>

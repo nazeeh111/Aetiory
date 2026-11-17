@@ -1,0 +1,35 @@
+{
+  "source_revision": "946ece2fdc94f1aa0d67f2f71aa551302a7baaa6",
+  "fresh_native_replay": {
+    "schema": "causal-engine/1",
+    "kind": "replay",
+    "status": "reproduced",
+    "undo_byte_identical": true
+  },
+  "tampered_plan": {
+    "status": "refused",
+    "error": "Refusal",
+    "message": "Intervention plan checksum mismatch"
+  },
+  "wrong_goal": {
+    "status": "unresolved",
+    "coverage": {
+      "eligible_candidates": 1,
+      "planned_trials": 3,
+      "attempted_trials": 3,
+      "completed_trials": 3,
+      "remaining_trials": 0,
+      "changed": 0,
+      "unchanged": 3,
+      "refused": 0,
+      "timed_out": 0,
+      "failed": 0,
+      "parent_mismatch": 0,
+      "selector_error": 0
+    },
+    "termination_reason": "candidates_exhausted",
+    "viewer_created": false
+  },
+  "existing_output_preserved": true,
+  "native_plan_relocation": "Not supported; start a new observation after moving source/input/runtime"
+}

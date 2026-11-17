@@ -1,0 +1,29 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Faultsplice return trials</title><style>body{margin:0}.diagram-container{overflow-x:auto}svg{display:block;min-width:1200px}</style><div class="diagram-container"><svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800" font-family="Arial" role="img" aria-labelledby="paired-trials-title paired-trials-desc"><title id="paired-trials-title">Faultsplice: a changed failure is not success</title><desc id="paired-trials-desc">Two actual paired return trials retain an original zero-capacity ValueError; replacing zero with None produces a TypeError, while replacing zero with one meets the exact nine-record and 3370 total goal.</desc><rect width="100%" height="100%" fill="#f4f6f8"/>
+<text x="32" y="38" font-size="16" fill="#526071" font-weight="700">FAULTSPLICE / ACTUAL RETURN TRIALS</text>
+<text x="32" y="100" font-size="46" fill="#161c26" font-weight="700">Changing the failure isn’t success.</text>
+<text x="32" y="145" font-size="23" fill="#526071" font-weight="400">9 records · 128 workers · original capacity 0</text>
+<text x="32" y="196" font-size="23" fill="#161c26" font-weight="400" font-family="Courier New">return len(rows) // workers</text>
+<text x="32" y="232" font-size="18" fill="#526071" font-weight="400">Each trial forks a fresh live computation.</text>
+<text x="64" y="290" font-size="15" fill="#1755ad" font-weight="700">ORIGINAL PARENT / RETURN 0</text>
+<text x="640" y="290" font-size="15" fill="#b32335" font-weight="700">ALTERNATE CHILD / ONE RETURN REPLACED</text>
+<line x1="32" y1="312" x2="1168" y2="312" stroke="#cbd2dc" stroke-width="1.5"/>
+<text x="64" y="360" font-size="16" fill="#526071" font-weight="700">Trial 1</text>
+<text x="64" y="402" font-size="26" fill="#161c26" font-weight="700">ValueError · exit 1</text>
+<text x="64" y="437" font-size="19" fill="#526071" font-weight="400">n must be at least one</text>
+<text x="640" y="360" font-size="20" fill="#b32335" font-weight="700">Replacement: None</text>
+<text x="640" y="402" font-size="25" fill="#161c26" font-weight="700">TypeError · exit 1</text>
+<text x="640" y="437" font-size="20" fill="#b32335" font-weight="700">Goal NOT met</text>
+<line x1="32" y1="472" x2="1168" y2="472" stroke="#cbd2dc" stroke-width="1.5"/>
+<text x="64" y="528" font-size="16" fill="#526071" font-weight="700">Trial 2</text>
+<text x="64" y="570" font-size="26" fill="#161c26" font-weight="700">ValueError · exit 1</text>
+<text x="64" y="605" font-size="19" fill="#526071" font-weight="400">n must be at least one</text>
+<text x="640" y="528" font-size="20" fill="#1755ad" font-weight="700">Replacement: 1</text>
+<text x="640" y="570" font-size="25" fill="#161c26" font-weight="700">9 records · 9 batches · total 3370</text>
+<text x="640" y="605" font-size="20" fill="#1755ad" font-weight="700">Exact stdout goal MET</text>
+<line x1="592" y1="328" x2="592" y2="626" stroke="#cbd2dc" stroke-width="1.5"/>
+<line x1="32" y1="658" x2="1168" y2="658" stroke="#cbd2dc" stroke-width="1.5"/>
+<text x="32" y="701" font-size="20" fill="#161c26" font-weight="700">Fresh paired replay reproduced both outcomes; unchanged control reproduced the original failure.</text>
+<text x="32" y="738" font-size="18" fill="#526071" font-weight="400">Native children reaped · target source unchanged · one eligible return, two attempted trials</text>
+<text x="32" y="777" font-size="16" fill="#526071" font-weight="400">Diagnostic influence on this owned run, not a source patch or general causal proof.</text>
+</svg>
+</div></html>

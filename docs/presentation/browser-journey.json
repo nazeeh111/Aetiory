@@ -1,0 +1,25 @@
+{
+  "errors": [],
+  "requests": [
+    "Standalone reader file only; zero dependency/external fetches"
+  ],
+  "initial": {
+    "title": "Faultsplice \u00b7 Paired execution ledger",
+    "before": "Exception \u00b7 code 1",
+    "after": "Exit \u00b7 code 0",
+    "stdout": "{\"batches\": 9, \"records\": 9, \"total\": 3370}\n",
+    "receipt": "The recorded effect has its required guards.",
+    "integrity": "Output bytes: original match; alternate match. Matching hashes check record consistency, not authenticity or a fresh execution."
+  },
+  "reopened": "Output bytes: original match; alternate match. Matching hashes check record consistency, not authenticity or a fresh execution.",
+  "bad_import": {
+    "message": "Import refused: Expected experiment-view/1. The prior experiment remains visible.",
+    "after": "Exit \u00b7 code 0",
+    "download_enabled": true
+  },
+  "mobile": {
+    "width": 390,
+    "scroll": 390
+  },
+  "pass": true
+}

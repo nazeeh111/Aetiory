@@ -1,0 +1,76 @@
+{
+  "source_revision": "946ece2fdc94f1aa0d67f2f71aa551302a7baaa6",
+  "identity": "Faultsplice, distributed/imported as aetiory; both CLI aliases remain",
+  "synthetic_owned_workload": true,
+  "input_records": 9,
+  "input_total": 3370,
+  "workers": 128,
+  "function": "planned_capacity",
+  "source_line": 10,
+  "return_expression": "return len(rows) // workers",
+  "original_return": 0,
+  "accepted_return": 1,
+  "trials": [
+    {
+      "replacement": [
+        "none"
+      ],
+      "classification": "unchanged",
+      "goal_met": false,
+      "outcome": {
+        "kind": "exception",
+        "exit_code": 1,
+        "exception_type": "builtins.TypeError",
+        "exception_message": "'NoneType' object cannot be interpreted as an integer",
+        "stdout": ""
+      },
+      "parent_matches_original": true,
+      "child_reaped": true
+    },
+    {
+      "replacement": [
+        "int",
+        "1"
+      ],
+      "classification": "changed",
+      "goal_met": true,
+      "outcome": {
+        "kind": "exit",
+        "exit_code": 0,
+        "exception_type": null,
+        "exception_message": null,
+        "stdout": "{\"batches\": 9, \"records\": 9, \"total\": 3370}\n"
+      },
+      "parent_matches_original": true,
+      "child_reaped": true
+    }
+  ],
+  "coverage": {
+    "eligible_candidates": 1,
+    "planned_trials": 3,
+    "attempted_trials": 2,
+    "completed_trials": 2,
+    "remaining_trials": 1,
+    "changed": 1,
+    "unchanged": 1,
+    "refused": 0,
+    "timed_out": 0,
+    "failed": 0,
+    "parent_mismatch": 0,
+    "selector_error": 0
+  },
+  "fresh_replay": "reproduced",
+  "fresh_undo_equal": true,
+  "all_accepted_children_reaped": true,
+  "guards": {
+    "plain_observed_equal": true,
+    "parent_matches_original": true,
+    "selected_changed": true,
+    "source_inputs_preserved": true,
+    "fresh_undo_equal": true,
+    "child_reaped": true
+  },
+  "target_source_sha256": "2b02ffb27229850f712316dd943cbf6a5bddf051b03637099c251e510d1d01f3",
+  "target_source_preserved": true,
+  "reader_redaction": "Only task-owned absolute source-frame paths are replaced in the public reader; its displayed artifact hash differs from the original recorded outcome. Native replay was verified before redaction."
+}
