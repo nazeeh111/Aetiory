@@ -4,7 +4,7 @@ This is a fresh native run of the project's intentionally failing, owned synthet
 
 ## Open the complete reader
 
-[Download reader.zip](reader.zip), extract it and open `reader/index.html` in a browser. It is self-contained HTML with inline code, styles, record and license notices. It performs no Python execution or external fetch. The accompanying `reader/experiment.json` can be reopened using **Open experiment**. Downloads reproduce the published original/alternate outcome bytes. Malformed imports refuse while the prior valid case remains visible and downloadable.
+[Download reader.zip](reader.zip), extract it and open `reader/index.html` in a browser. It is self-contained HTML with inline code, styles, record and license notices. It performs no Python execution or external fetch. The accompanying `reader/experiment.json` can be reopened using **Open experiment**. Downloads reproduce the published original/alternate outcome bytes. Malformed imports refuse while the prior valid case remains visible and downloadable. This historical bundled viewer predates the current unsafe-integer import refusal; use the current Studio or a newly generated portable viewer for external records.
 
 The bundle includes the exact owned source, nine-row input, record, case/control summaries, figures, README and license. Its manifest lists every included path and SHA256. The application package and interpreter are external, explicitly pinned above; a native replay plan is not embedded or claimed portable.
 

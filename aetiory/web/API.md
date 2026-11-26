@@ -86,7 +86,7 @@ file://, and retains import/export and actual-output byte downloads. Separate
 index/app/style files need a local static server because browsers restrict file
 module loading. No source execution occurs either way. The native exporter refuses
 numeric integers outside +/- 9007199254740991 so the browser cannot silently round
-recorded values. Keep their exact typed native plans for local inspection.
+recorded values. The viewer also refuses imported records containing numeric integer values outside that range rather than silently displaying or re-saving rounded values. Keep their exact typed native plans for local inspection.
 For byte-non-UTF8
 artifacts, an explicit binary representation/version extension is needed; do not
 decode lossily and present matching text hashes as original-byte fidelity.
