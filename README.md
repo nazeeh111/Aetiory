@@ -8,7 +8,7 @@
 
 Faultsplice tests alternate values at a selected live Python return. A native fork preserves an unchanged parent beside the alternate child; fresh replay and an unchanged control check the result. It observes diagnostic influence on one trusted run, without editing the workload's source.
 
-[Run the complete CSV case](#try-the-complete-csv-investigation) · [Download this offline reader](docs/presentation/reader.zip) · [Inspect the recorded studio](https://nazeeh111.github.io/Aetiory/) · [Agent tools](docs/AGENTS.md)
+[Run the complete CSV case](#try-the-complete-csv-investigation) · [Download this offline reader](https://raw.githubusercontent.com/nazeeh111/Aetiory/e425596c0b74b1ea0cf4b547c667bcafdcaa08dc/docs/presentation/reader.zip) · [Inspect the recorded studio](https://nazeeh111.github.io/Aetiory/) · [Agent tools](docs/AGENTS.md)
 
 <picture>
   <source media="(max-width: 600px)" srcset="docs/presentation/paired-trials-mobile.png">
@@ -19,7 +19,7 @@ The fresh owned case has **9 records and 128 workers**. Floor allocation returns
 
 ## Carry a readable investigation
 
-[Download reader.zip](docs/presentation/reader.zip), extract it and open **reader/index.html** offline. Follow **Result → Return → Checks**, save/reopen the record, and download the actual published outcomes. The fresh standalone page displays Faultsplice while preserving the `aetiory` package/import and compatible commands. The browser inspects retained evidence; it cannot run Python or establish fresh replay.
+[Download reader.zip](https://raw.githubusercontent.com/nazeeh111/Aetiory/e425596c0b74b1ea0cf4b547c667bcafdcaa08dc/docs/presentation/reader.zip), extract it and open **reader/index.html** offline. Follow **Result → Return → Checks**, save/reopen the record, and download the actual published outcomes. The fresh standalone page displays Faultsplice while preserving the `aetiory` package/import and compatible commands. The browser inspects retained evidence; it cannot run Python or establish fresh replay.
 
 The linked reader is a historical capture. Its import control predates the current unsafe-integer refusal; use the current Studio or a newly generated portable viewer for external records with large numeric integers. The reader bundle includes its source/input, hashes and notices. Absolute task-owned frame paths are redacted for publication; the record distinguishes the published artifact hash from the original execution hash. The native run was guarded before redaction. Moving source/interpreter files requires a new observation rather than rewriting an old plan.
 
