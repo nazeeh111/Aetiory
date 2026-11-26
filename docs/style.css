@@ -16,7 +16,7 @@ a{color:var(--indigo);text-underline-offset:4px}
 :where(button,a,summary,input,select,pre,output):focus-visible{outline:2px solid #f0d38a;outline-offset:4px}
 .skip{position:absolute;top:-100px;left:1rem;background:var(--white);padding:1rem;z-index:10}
 .skip:focus{top:1rem}
-.distribution-note{max-width:1500px;margin:auto;padding:8px 32px;border-bottom:1px solid var(--line);color:var(--muted);font-size:10px;letter-spacing:.25px;display:flex;justify-content:space-between;gap:16px}
+.distribution-note{max-width:1500px;margin:auto;padding:8px 32px;border-bottom:1px solid var(--line);color:var(--muted);font-size:12px;letter-spacing:.1px;display:flex;justify-content:space-between;gap:16px}
 .masthead{max-width:1500px;margin:auto;padding:13px 32px;display:flex;gap:24px;align-items:center;border-bottom:1px solid var(--line)}
 .brand{font-size:27px;font-weight:750;letter-spacing:-1.2px;display:flex;align-items:center;color:var(--ink);text-decoration:none;gap:11px}
 .brand svg{width:30px;height:30px;fill:none;stroke:var(--ink);stroke-width:2.1}
@@ -166,7 +166,7 @@ footer p{font-size:11px;margin:0;line-height:1.7}
 .diff-segment.diff_chg{background:#2b3e58;color:#d6e7ff}
 @media(max-width:950px){.header-note{display:none}.intro{gap:28px}.case-list{grid-template-columns:1fr 1fr}.case-button:nth-child(2){border-right:0}.case-button:nth-child(-n+2){border-bottom:1px solid var(--line)}.guard-list{grid-template-columns:1fr 1fr}}
 @media(max-width:620px){
- html{scroll-padding-top:120px}.distribution-note{padding:9px 18px;display:block;font-size:9px;line-height:1.6}.distribution-note span{display:block;margin-top:3px}
+ html{scroll-padding-top:120px}.distribution-note{padding:9px 18px;display:block;font-size:11px;line-height:1.6}.distribution-note span{display:block;margin-top:3px}
  .masthead{padding:16px 18px;flex-wrap:wrap;gap:14px}.brand{font-size:27px}.masthead nav{margin-left:0;width:100%}.button{font-size:12px;padding:10px 12px;min-height:42px}
  main{padding:0 18px 32px}.intro{display:block;padding:22px 0 17px}h1{font-size:29px;letter-spacing:-1px}.lede{font-size:12px}.viewer-boundary{padding:0 0 0 12px;margin-top:16px;font-size:11px}.viewer-boundary span{margin-top:5px}
  .load-status{font-size:10px}.case-heading{display:block;font-size:14px}.case-heading>span{display:block;font-size:9px;margin-bottom:4px}.case-button{padding:11px;font-size:11px;min-height:76px}
@@ -174,3 +174,4 @@ footer p{font-size:11px;margin:0;line-height:1.7}
  .result-grid,.return-grid{grid-template-columns:1fr;gap:12px}.outcome-panel .alternate{border-left:1px solid var(--line);border-top-width:1px;border-bottom:2px solid var(--coral)}.outcome-panel h3{font-size:25px}.result-panel,.decision,.source-panel,.receipt{padding:15px}.panel-title{flex-wrap:wrap}.panel-title code{text-align:left}.guard-list,#ancestry{grid-template-columns:1fr}.receipt-header{flex-wrap:wrap;gap:10px}.changes td{max-width:125px}.event-values{gap:8px}pre,#source{font-size:11px}.step-heading h2{font-size:19px}.step-heading p{font-size:12px}.entry-strip{display:block;padding:20px 0}.run-local{margin-top:20px}.diagram-controls{font-size:10px}footer{padding:22px 18px;flex-direction:column}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+.viewer-boundary a{display:block;margin-top:8px;font-size:12px;font-weight:700}

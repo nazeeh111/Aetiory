@@ -37,6 +37,8 @@ fork-compatible state. A native process fork copies live computational memory;
 it does not roll back files, network activity or other external effects.
 
 ```sh
+git clone https://github.com/nazeeh111/Aetiory.git
+cd Aetiory
 python3 -m venv .venv
 . .venv/bin/activate
 python -m pip install --no-deps .
@@ -55,7 +57,7 @@ From a source checkout after installing Aetiory, use Python 3.12+ for this examp
 (it uses `itertools.batched`). Every output directory must be new.
 
 ```sh
-aetiory diagnose --script examples/partition_records.py \
+faultsplice diagnose --script examples/partition_records.py \
   --input examples/inputs/records.csv \
   --arg "$(pwd)/examples/inputs/records.csv" --arg 128 \
   --stdout-pointer '' \
