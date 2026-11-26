@@ -20,6 +20,83 @@ export function validatePayload(payload){
  }
  return payload;
 }
+// JSON.parse validates syntax first. This second bounded walk associates each
+// number token with its container so 1, 1.0 and nested values remain distinct.
+let recordNumbers = new WeakMap();
+export function parseRecord(text) {
+ const value = JSON.parse(text);
+ const numbers = new WeakMap();
+ const primitive = /-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?|true|false|null/y;
+ let position = 0;
+ function whitespace() { while (position < text.length && /\s/.test(text[position])) position++; }
+ function readString() {
+  const start = position++;
+  while (position < text.length) {
+   if (text[position] === '\\') { position += 2; continue; }
+   if (text[position++] === '"') return JSON.parse(text.slice(start, position));
+  }
+  throw Error('Invalid string.');
+ }
+ function visit(current, parent, key, depth) {
+  if (depth > 40) throw Error('Record nesting exceeds 40 levels.');
+  whitespace();
+  const next = text[position];
+  if (next === '"') { readString(); return; }
+  if (next === '{') {
+   position++; whitespace();
+   const keys = new Set();
+   if (text[position] === '}') { position++; return; }
+   while (true) {
+    whitespace();
+    const name = readString();
+    if (keys.has(name)) throw Error('Duplicate record keys are unsupported.');
+    keys.add(name); whitespace(); position++; // colon, validated above
+    visit(current[name], current, name, depth + 1);
+    whitespace();
+    if (text[position++] === '}') return;
+   }
+  }
+  if (next === '[') {
+   position++; whitespace();
+   if (text[position] === ']') { position++; return; }
+   let index = 0;
+   while (true) {
+    visit(current[index], current, String(index), depth + 1);
+    index++; whitespace();
+    if (text[position++] === ']') return;
+   }
+  }
+  primitive.lastIndex = position;
+  const match = primitive.exec(text);
+  if (!match) throw Error('Invalid record value.');
+  position = primitive.lastIndex;
+  if (parent && typeof current === 'number') {
+   let tokens = numbers.get(parent);
+   if (!tokens) { tokens = new Map(); numbers.set(parent, tokens); }
+   tokens.set(String(key), match[0]);
+  }
+ }
+ visit(value, null, '', 0);
+ return {value, numbers};
+}
+function numberToken(parent, key, value) {
+ return recordNumbers.get(parent)?.get(String(key)) ?? JSON.stringify(value);
+}
+function semanticValue(value, parent, key) {
+ if (typeof value === 'number') {
+  const token = numberToken(parent, key, value);
+  return ['number', /[.eE]/.test(token) ? 'float' : 'int', value];
+ }
+ if (Array.isArray(value)) return ['list', value.map((item, index) => semanticValue(item, value, index))];
+ if (value && typeof value === 'object') return ['object', Object.keys(value).sort().map(name => [name, semanticValue(value[name], value, name)])];
+ return [typeof value, value];
+}
+function exactJSON(value, parent, key) {
+ if (typeof value === 'number') return numberToken(parent, key, value);
+ if (Array.isArray(value)) return '[' + value.map((item, index) => exactJSON(item, value, index)).join(', ') + ']';
+ if (value && typeof value === 'object') return '{' + Object.keys(value).map(name => JSON.stringify(name) + ': ' + exactJSON(value[name], value, name)).join(', ') + '}';
+ return JSON.stringify(value);
+}
 // Preserve JSON number token types when checking a native stdout goal. Older
 // engines without source-aware JSON revivers cannot establish this goal locally.
 function pythonFloatHex(v){const view=new DataView(new ArrayBuffer(8));view.setFloat64(0,v);const bits=view.getBigUint64(0);const sign=(bits>>63n)===1n?'-':'',exp=Number((bits>>52n)&2047n),fraction=(bits&((1n<<52n)-1n)).toString(16).padStart(13,'0');if(exp===0&&fraction==='0000000000000')return sign+'0x0.0p+0';const power=exp===0?-1022:exp-1023;return sign+'0x'+(exp===0?'0':'1')+'.'+fraction+'p'+(power>=0?'+':'')+power;}
@@ -48,8 +125,8 @@ export function outcomeGoal(text,selector){
  }catch{return null;}
 }
 function outcomeAssessment(e){if(e.selector.kind!=='successful-exit')return true;if(!e.artifacts.after)return false;try{if(!validOutcome(JSON.parse(e.artifacts.before.text))||!validOutcome(JSON.parse(e.artifacts.after.text)))return false;const before=outcomeGoal(e.artifacts.before.text,e.selector),after=outcomeGoal(e.artifacts.after.text,e.selector);if(before===null||after===null)return null;return before===false&&after===true;}catch{return false;}}
-export function receiptAssessment(e,hashes){const allGuards=guardDefinitions.every(([key])=>e.guards[key]===true);const hashesMatch=hashes.before==='match'&&hashes.after==='match';const retainedChange=e.changes.some(c=>c.selected&&JSON.stringify(c.before)!==JSON.stringify(c.after));const goal=outcomeAssessment(e);const retainedReturn=e.event!==null&&e.event.portable_expected!==undefined&&e.event.portable_replacement!==undefined;return{accepted:e.status==='accepted'&&allGuards&&hashesMatch&&retainedChange&&retainedReturn&&goal===true,contradictory:e.status==='accepted'&&(guardDefinitions.some(([key])=>e.guards[key]===false)||!retainedChange||!retainedReturn||goal===false),downloadAfter:['accepted','no_effect'].includes(e.status)&&hashes.after==='match'&&goal===true};}
-export function valueText(v){return typeof v==='string'?v:JSON.stringify(v,null,2);}
+export function receiptAssessment(e,hashes){const allGuards=guardDefinitions.every(([key])=>e.guards[key]===true);const hashesMatch=hashes.before==='match'&&hashes.after==='match';const retainedChange=e.changes.some(c=>c.selected&&JSON.stringify(semanticValue(c.before,c,'before'))!==JSON.stringify(semanticValue(c.after,c,'after')));const goal=outcomeAssessment(e);const retainedReturn=e.event!==null&&e.event.portable_expected!==undefined&&e.event.portable_replacement!==undefined;return{accepted:e.status==='accepted'&&allGuards&&hashesMatch&&retainedChange&&retainedReturn&&goal===true,contradictory:e.status==='accepted'&&(guardDefinitions.some(([key])=>e.guards[key]===false)||!retainedChange||!retainedReturn||goal===false),downloadAfter:['accepted','no_effect'].includes(e.status)&&hashes.after==='match'&&goal===true};}
+export function valueText(v,parent=null,key=''){return typeof v==='string'?v:exactJSON(v,parent,key);}
 function typedGoalText(p){const [kind,value]=p;if(kind==='none')return 'null';if(kind==='int')return value+' (integer)';if(kind==='float')return String(floatHex(value))+' (decimal)';if(kind==='list')return '['+value.map(typedGoalText).join(', ')+']';if(kind==='dict')return '{'+value.map(([k,v])=>JSON.stringify(k[1])+': '+typedGoalText(v)).join(', ')+'}';return JSON.stringify(value);}
 export function selectorText(s){if(s.kind==='successful-exit')return 'Exit 0'+(s.stdout_pointer===null?'':' · stdout '+(s.stdout_pointer||'/')+' = '+typedGoalText(s.stdout_expected));return s.kind==='html-id-following-element-sibling'?(s.sibling===0?`#${s.id} (element)`:`#${s.id} → element sibling ${s.sibling}`):s.pointer||'/ (root)';}
 export async function hashText(text){if(!globalThis.crypto?.subtle)return null;const bytes=new TextEncoder().encode(text);return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),x=>x.toString(16).padStart(2,'0')).join('');}
@@ -63,28 +140,28 @@ function filename(e,which){const extension=e.artifacts[which].media_type==='text
 function snapshotContent(value){return Array.isArray(value.content)?value.content:value.children;}
 function snapshot(value){return value&&typeof value==='object'&&!Array.isArray(value)&&['td','span'].includes(value.tag)&&Array.isArray(snapshotContent(value));}
 function snapshotSegments(value,kind='plain'){if(typeof value==='string')return[{text:value,kind}];if(!snapshot(value))return[{text:valueText(value),kind:'plain'}];const attr=Array.isArray(value.attrs)?value.attrs.find(x=>Array.isArray(x)&&x[0]==='class'):null;const next=attr&&['diff_add','diff_sub','diff_chg'].includes(attr[1])?attr[1]:kind;return snapshotContent(value).flatMap(v=>snapshotSegments(v,next));}
-function renderValue(id,value){const node=$(id);if(!snapshot(value)){node.textContent=valueText(value);return;}node.replaceChildren();for(const part of snapshotSegments(value))node.append(element('span',part.text,'diff-segment '+part.kind));}
-function renderSelection(){const e=state.experiment;const c=e.changes[state.row];if(!c){set('selection-context',e.id+' / No retained changed field');set('before-value','No retained changed value.');set('after-value','No retained changed value.');tag('selected-tag','No field retained');set('effect-note','The record contains no accepted output change.');return;}set('selection-context',e.id+' / '+(c.path||'(root)')+' / '+(c.selected?'original target':'collateral'));renderValue('before-value',c.before);renderValue('after-value',c.after);tag('selected-tag',c.selected?'Original target':'Collateral field',c.selected?'good':'');const assessment=receiptAssessment(e,state.hashes);set('effect-note',assessment.accepted?(c.selected?'A recorded paired return experiment changed this selected result.':'This additional output change was retained as collateral from the same recorded experiment.'):'These are recorded values. An accepted effect is not established by the currently available guard and byte checks.');for(const row of $('changes').children)row.classList.toggle('active',Number(row.dataset.index)===state.row);}
+function renderValue(id,value,parent,key){const node=$(id);if(!snapshot(value)){node.textContent=valueText(value,parent,key);return;}node.replaceChildren();for(const part of snapshotSegments(value))node.append(element('span',part.text,'diff-segment '+part.kind));}
+function renderSelection(){const e=state.experiment;const c=e.changes[state.row];if(!c){set('selection-context',e.id+' / No retained changed field');set('before-value','No retained changed value.');set('after-value','No retained changed value.');tag('selected-tag','No field retained');set('effect-note','The record contains no accepted output change.');return;}set('selection-context',e.id+' / '+(c.path||'(root)')+' / '+(c.selected?'original target':'collateral'));renderValue('before-value',c.before,c,'before');renderValue('after-value',c.after,c,'after');tag('selected-tag',c.selected?'Original target':'Collateral field',c.selected?'good':'');const assessment=receiptAssessment(e,state.hashes);set('effect-note',assessment.accepted?(c.selected?'A recorded paired return experiment changed this selected result.':'This additional output change was retained as collateral from the same recorded experiment.'):'These are recorded values. An accepted effect is not established by the currently available guard and byte checks.');for(const row of $('changes').children)row.classList.toggle('active',Number(row.dataset.index)===state.row);}
 function renderReceipt(){const e=state.experiment;const assessment=receiptAssessment(e,state.hashes);const imported=state.imported||e.mode==='imported';let heading,label,kind='';if(assessment.contradictory){heading='The receipt contradicts its accepted status.';label='CONTRADICTORY RECORD';kind='bad';}else if(assessment.accepted){heading='The recorded effect has its required guards.';label=imported?'UNAUTHENTICATED IMPORT':'RECORDED ACCEPTED EFFECT';kind='good';}else{heading=e.status==='no_effect'?'No selected effect was recorded.':e.status==='refused'?'This experiment was refused.':e.status==='partial'?'This is an incomplete experiment.':'Required checks are missing or unavailable.';label=e.status.toUpperCase().replace('_',' ');}
  set('receipt-heading',heading);tag('status-label',label,kind);set('integrity-note',`Output bytes: original ${state.hashes.before}; alternate ${state.hashes.after}. Matching hashes check record consistency, not authenticity or a fresh execution.`);
  $('guards').replaceChildren();for(const [key,label,detail] of guardDefinitions){const result=e.guards[key];const li=element('li');const symbol=element('span',result===true?'✓':result===false?'×':'?', 'guard-symbol '+(result===true?'pass':result===false?'fail':''));const copy=element('div',label+' · '+(result===true?'recorded pass':result===false?'recorded fail':'not retained'));copy.append(element('small',detail));li.append(symbol,copy);$('guards').append(li);}
  $('download-before').disabled=state.hashes.before!=='match';$('download-after').disabled=!assessment.downloadAfter;renderSelection();
 }
 function renderOutcome(e){const panel=$('outcome-panel');if(!panel)return;panel.hidden=e.selector.kind!=='successful-exit';if(panel.hidden)return;for(const side of ['before','after']){let outcome;try{outcome=JSON.parse(e.artifacts[side]?.text??'null');}catch{outcome=null;}set('outcome-'+side,outcome?`${outcome.kind==='exception'?'Exception':'Exit'} · code ${outcome.exit_code}`:'No outcome retained');set('exception-'+side,outcome?.exception?outcome.exception.type+': '+outcome.exception.message:'No uncaught exception');set('stdout-'+side,outcome?.stdout||'(empty stdout)');set('stderr-'+side,outcome?.stderr||'(empty stderr)');}set('goal-note',e.selector.stdout_pointer===null?'Requested outcome: normal completion with exit0. Verify application correctness separately.':'Requested outcome: normal completion with exit0 and the exact typed stdout JSON value. A successful experiment does not repair source.');}
-function renderCase(){const e=state.experiment;renderOutcome(e);$('case-link').hidden=state.imported||e.mode==='imported';$('case-link').href='?case='+encodeURIComponent(e.id)+'#workspace';set('case-title',e.title);set('case-summary',e.summary);tag('mode-label',state.imported||e.mode==='imported'?'IMPORTED · NOT AUTHENTICATED':'RECORDED PROOF');set('selector',selectorText(e.selector));$('changes').replaceChildren();e.changes.forEach((c,index)=>{const tr=element('tr');tr.dataset.index=String(index);const location=element('td');const b=element('button',c.path);b.type='button';b.setAttribute('aria-label','Inspect '+c.path);b.onclick=()=>{state.row=index;renderSelection();};location.append(b);tr.append(location,element('td',short(c.before)),element('td',short(c.after)));$('changes').append(tr);});set('change-note',e.changes.length?`${e.changes.length} retained changed field${e.changes.length===1?'':'s'}. The selected flag is the original target; other changes are collateral.`:'No changed fields retained. This is not an accepted effect.');
- const event=e.event;tag('event-id',event?`EVENT ${event.id} / OCCURRENCE ${event.occurrence}`:'No retained event');set('return-site',event?`${event.ancestry[0]?.function??'Observed return'} · ${event.site}`:'Return not available');set('expected',event?valueText(event.portable_expected):'Not retained');set('replacement',event?valueText(event.portable_replacement):'Not retained');set('argument-note',event?.args_preview!==undefined?'Argument preview: '+valueText(event.args_preview):'Arguments were not retained in this record. The observed return and call path are shown below.');set('value-hash',event?.value_hash??'Not retained');set('prefix-hash',event?.prefix_before??'Not retained');set('source-name',e.source?.name??'Source not retained');set('source',e.source?e.source.text.split('\n').map((line,i)=>`${String(e.source.start_line+i).padStart(5)}  ${line}`).join('\n'):'No source excerpt retained.');set('source-identity',e.source?'Whole source identity (excerpt shown): '+(e.source.sha256??'not retained'):'');
- $('ancestry').replaceChildren();for(const frame of event?.ancestry??[]){const li=element('li');li.append(element('code',frame.function),element('span',`Observed line ${frame.line}${frame.first_line?' · starts at '+frame.first_line:''}`));$('ancestry').append(li);}set('path-count',`${event?.ancestry.length??0} recorded frames`);$('limitations').replaceChildren(...e.limitations.map(x=>element('li',x)));$('provenance').replaceChildren(...e.provenance.map(x=>element('li',x)));$('output-choice').value='before';set('complete-output',e.artifacts.before.text);set('record',JSON.stringify(e,null,2));for(const b of $('cases').children)b.setAttribute('aria-pressed',String(b.dataset.id===e.id));renderReceipt();
+function renderCase(){const e=state.experiment;renderOutcome(e);$('case-link').hidden=state.imported||e.mode==='imported';$('case-link').href='?case='+encodeURIComponent(e.id)+'#workspace';set('case-title',e.title);set('case-summary',e.summary);tag('mode-label',state.imported||e.mode==='imported'?'IMPORTED · NOT AUTHENTICATED':'RECORDED PROOF');set('selector',selectorText(e.selector));$('changes').replaceChildren();e.changes.forEach((c,index)=>{const tr=element('tr');tr.dataset.index=String(index);const location=element('td');const b=element('button',c.path);b.type='button';b.setAttribute('aria-label','Inspect '+c.path);b.onclick=()=>{state.row=index;renderSelection();};location.append(b);tr.append(location,element('td',short(c.before,c,'before')),element('td',short(c.after,c,'after')));$('changes').append(tr);});set('change-note',e.changes.length?`${e.changes.length} retained changed field${e.changes.length===1?'':'s'}. The selected flag is the original target; other changes are collateral.`:'No changed fields retained. This is not an accepted effect.');
+ const event=e.event;tag('event-id',event?`EVENT ${event.id} / OCCURRENCE ${event.occurrence}`:'No retained event');set('return-site',event?`${event.ancestry[0]?.function??'Observed return'} · ${event.site}`:'Return not available');set('expected',event?valueText(event.portable_expected,event,'portable_expected'):'Not retained');set('replacement',event?valueText(event.portable_replacement,event,'portable_replacement'):'Not retained');set('argument-note',event?.args_preview!==undefined?'Argument preview: '+valueText(event.args_preview,event,'args_preview'):'Arguments were not retained in this record. The observed return and call path are shown below.');set('value-hash',event?.value_hash??'Not retained');set('prefix-hash',event?.prefix_before??'Not retained');set('source-name',e.source?.name??'Source not retained');set('source',e.source?e.source.text.split('\n').map((line,i)=>`${String(e.source.start_line+i).padStart(5)}  ${line}`).join('\n'):'No source excerpt retained.');set('source-identity',e.source?'Whole source identity (excerpt shown): '+(e.source.sha256??'not retained'):'');
+ $('ancestry').replaceChildren();for(const frame of event?.ancestry??[]){const li=element('li');li.append(element('code',frame.function),element('span',`Observed line ${frame.line}${frame.first_line?' · starts at '+frame.first_line:''}`));$('ancestry').append(li);}set('path-count',`${event?.ancestry.length??0} recorded frames`);$('limitations').replaceChildren(...e.limitations.map(x=>element('li',x)));$('provenance').replaceChildren(...e.provenance.map(x=>element('li',x)));$('output-choice').value='before';set('complete-output',e.artifacts.before.text);set('record',exactJSON(e));for(const b of $('cases').children)b.setAttribute('aria-pressed',String(b.dataset.id===e.id));renderReceipt();
 }
-function short(value){let t=valueText(value);if(snapshot(value)){const parts=snapshotSegments(value);const kinds=[...new Set(parts.map(x=>x.kind).filter(x=>x!=='plain'))].map(x=>({diff_add:'Added highlight',diff_sub:'Removed highlight',diff_chg:'Changed highlight'})[x]);t=kinds.join(', ')+' · '+parts.map(x=>x.text).join('').trim();}return t.length>160?t.slice(0,157)+'…':t;}
+function short(value,parent,key){let t=valueText(value,parent,key);if(snapshot(value)){const parts=snapshotSegments(value);const kinds=[...new Set(parts.map(x=>x.kind).filter(x=>x!=='plain'))].map(x=>({diff_add:'Added highlight',diff_sub:'Removed highlight',diff_chg:'Changed highlight'})[x]);t=kinds.join(', ')+' · '+parts.map(x=>x.text).join('').trim();}return t.length>160?t.slice(0,157)+'…':t;}
 async function choose(id){const e=state.payload.experiments.find(x=>x.id===id);if(!e)return;const revision=++state.revision;state.experiment=e;state.row=Math.max(0,e.changes.findIndex(c=>c.selected));state.hashes={before:'checking',after:e.artifacts.after?'checking':'not retained'};renderCase();for(const side of ['before','after']){const a=e.artifacts[side];if(!a)continue;const digest=await hashText(a.text);if(revision!==state.revision)return;state.hashes[side]=!digest?'unavailable':!a.sha256?'identity not retained':digest===a.sha256.toLowerCase()?'match':'MISMATCH';}if(revision!==state.revision)return;renderReceipt();set('load-status','Evidence loaded. No source was executed. '+(state.imported?'This is an unauthenticated imported record.':'This page explores recorded paired executions.'));}
-function load(payload,imported){validatePayload(payload);state.payload=payload;state.imported=imported;$('load-status').classList.remove('error');$('cases').replaceChildren();for(const e of payload.experiments){const b=element('button',e.title,'case-button');b.type='button';b.dataset.id=e.id;b.setAttribute('aria-pressed','false');b.onclick=()=>{choose(e.id).catch(x=>error(x.message));};$('cases').append(b);}$('workspace').hidden=false;$('export-view').disabled=false;const requested=new URLSearchParams(globalThis.location?.search??'').get('case');const selected=payload.experiments.find(e=>e.id===requested)??payload.experiments[0];choose(selected.id).catch(x=>error(x.message));}
+function load(parsed,imported,raw){const payload=parsed.value;validatePayload(payload);recordNumbers=parsed.numbers;state.raw=raw;state.payload=payload;state.imported=imported;$('load-status').classList.remove('error');$('cases').replaceChildren();for(const e of payload.experiments){const b=element('button',e.title,'case-button');b.type='button';b.dataset.id=e.id;b.setAttribute('aria-pressed','false');b.onclick=()=>{choose(e.id).catch(x=>error(x.message));};$('cases').append(b);}$('workspace').hidden=false;$('export-view').disabled=false;const requested=new URLSearchParams(globalThis.location?.search??'').get('case');const selected=payload.experiments.find(e=>e.id===requested)??payload.experiments[0];choose(selected.id).catch(x=>error(x.message));}
 export function boot(){
  $('open-record').onclick=()=>$('import-file').click();
- $('import-file').onchange=async event=>{const file=event.target.files[0];if(!file)return;try{if(file.size>MAX_BYTES)throw Error('Experiment files are limited to 8 MiB.');const text=await file.text();load(JSON.parse(text),true);}catch(e){error('Import refused: '+e.message+' The prior experiment remains visible.');}finally{event.target.value='';}};
- $('export-view').onclick=()=>{if(state.payload)save(JSON.stringify(state.payload,null,2)+'\n','aetiory-experiment.json','application/json');};
+ $('import-file').onchange=async event=>{const file=event.target.files[0];if(!file)return;try{if(file.size>MAX_BYTES)throw Error('Experiment files are limited to 8 MiB.');const bytes=new Uint8Array(await file.arrayBuffer());if(bytes.length>=3&&bytes[0]===0xef&&bytes[1]===0xbb&&bytes[2]===0xbf)throw Error('UTF-8 byte order marks are unsupported.');const text=new TextDecoder('utf-8',{fatal:true}).decode(bytes);load(parseRecord(text),true,text);}catch(e){error('Import refused: '+e.message+' The prior experiment remains visible.');}finally{event.target.value='';}};
+ $('export-view').onclick=()=>{if(state.payload)save(state.raw,'aetiory-experiment.json','application/json');};
  $('output-choice').onchange=()=>{const a=state.experiment?.artifacts[$('output-choice').value];set('complete-output',a?.text??'No alternate output was retained.');};
  for(const [id,side]of[['download-before','before'],['download-after','after']])$(id).onclick=()=>{if($(id).disabled||state.hashes[side]!=='match')return;const e=state.experiment;save(e.artifacts[side].text,filename(e,side),e.artifacts[side].media_type);};
- const consume=text=>{if(new TextEncoder().encode(text).length>MAX_BYTES)throw Error('Recorded data exceeds 8 MiB.');load(JSON.parse(text),false);};
+ const consume=text=>{if(new TextEncoder().encode(text).length>MAX_BYTES)throw Error('Recorded data exceeds 8 MiB.');load(parseRecord(text),false,text);};
  const embedded=$('embedded-record');
  if(embedded){try{consume(embedded.textContent);}catch(e){error(e.message+' Open an experiment-view/1 JSON file to inspect local evidence.');}return;}
  fetch('demo.json',{cache:'no-cache',credentials:'omit'}).then(r=>{if(!r.ok)throw Error('Recorded data is unavailable.');const length=Number(r.headers.get('content-length'));if(length>MAX_BYTES)throw Error('Recorded data exceeds 8 MiB.');return r.text();}).then(consume).catch(e=>error(e.message+' Open an experiment-view/1 JSON file to inspect local evidence.'));
